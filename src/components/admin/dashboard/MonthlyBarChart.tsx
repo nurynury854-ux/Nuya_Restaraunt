@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import type { DailyBucket } from "@/lib/analytics";
+import { useDictionary } from "@/components/i18n/LocaleProvider";
+import { formatMessage } from "@/lib/i18n/format";
 
 /**
  * Daily revenue for the selected month. A month can hold up to 31 bars, too
@@ -10,6 +12,8 @@ import type { DailyBucket } from "@/lib/analytics";
  * screen readers with no pointer involved.
  */
 export function MonthlyBarChart({ buckets }: { buckets: DailyBucket[] }) {
+  const { dict } = useDictionary();
+  const t = dict.adminDashboard;
   const [activeKey, setActiveKey] = useState<string | null>(null);
   const maxRevenue = Math.max(1, ...buckets.map((b) => b.revenue));
 
@@ -24,9 +28,13 @@ export function MonthlyBarChart({ buckets }: { buckets: DailyBucket[] }) {
                 role="tooltip"
                 className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1.5 -translate-x-1/2 whitespace-nowrap rounded-lg bg-ink-900 px-2.5 py-1.5 text-center text-xs text-white shadow-lift"
               >
-                <p className="font-semibold">Day {b.dayOfMonth}</p>
+                <p className="font-semibold">{formatMessage(t.dayLabel, { day: b.dayOfMonth })}</p>
                 <p className="text-ink-100">
-                  {b.orderCount} order{b.orderCount === 1 ? "" : "s"} · ${b.revenue}
+                  {formatMessage(t.dayOrders, {
+                    count: b.orderCount,
+                    plural: b.orderCount === 1 ? "" : "s",
+                    revenue: b.revenue,
+                  })}
                 </p>
               </div>
             )}
@@ -36,7 +44,12 @@ export function MonthlyBarChart({ buckets }: { buckets: DailyBucket[] }) {
               onMouseLeave={() => setActiveKey((k) => (k === b.dateKey ? null : k))}
               onFocus={() => setActiveKey(b.dateKey)}
               onBlur={() => setActiveKey((k) => (k === b.dateKey ? null : k))}
-              aria-label={`Day ${b.dayOfMonth}: ${b.orderCount} order${b.orderCount === 1 ? "" : "s"}, $${b.revenue} revenue`}
+              aria-label={formatMessage(t.dayAriaLabel, {
+                day: b.dayOfMonth,
+                count: b.orderCount,
+                plural: b.orderCount === 1 ? "" : "s",
+                revenue: b.revenue,
+              })}
               className={`w-full cursor-default rounded-t-[4px] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-brand-300 ${
                 active ? "bg-brand-500" : "bg-brand-400"
               }`}

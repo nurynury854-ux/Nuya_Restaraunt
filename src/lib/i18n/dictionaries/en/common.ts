@@ -1,0 +1,18 @@
+export const common = {
+  loading: "Loading...",
+  back: "Back",
+  cancel: "Cancel",
+  save: "Save changes",
+  saving: "Saving...",
+  add: "Add",
+  edit: "Edit",
+  delete: "Delete",
+  remove: "Remove",
+  close: "Close",
+  confirm: "Confirm",
+  next: "Next",
+  changeLanguage: "Language",
+  today: "Today",
+  somethingWentWrong: "Something went wrong. Please try again.",
+  networkError: "Network error — please try again",
+};

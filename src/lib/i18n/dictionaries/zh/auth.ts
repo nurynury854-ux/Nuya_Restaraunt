@@ -1,0 +1,31 @@
+import type { auth as enAuth } from "@/lib/i18n/dictionaries/en/auth";
+
+export const auth: typeof enAuth = {
+  login: {
+    subtitle: "登入您的管理後台",
+    email: "電子郵件",
+    password: "密碼",
+    submit: "登入",
+    loginFailed: "登入失敗",
+    noSiteYet: "還沒有網站嗎？",
+    createOne: "建立一個",
+  },
+  signup: {
+    subtitle: "建立您的線上訂餐網站",
+    businessName: "店家名稱",
+    businessNamePlaceholder: "例如：喬氏咖啡",
+    siteUrl: "您的網站網址",
+    siteUrlHint: "僅限英文字母、數字與連字號",
+    siteUrlTaken: "此網址已被使用",
+    firstLocationName: "第一個門市名稱",
+    firstLocationHint: "之後可以新增更多門市",
+    firstLocationPlaceholder: "例如：忠孝門市",
+    email: "電子郵件",
+    password: "密碼",
+    passwordHint: "至少 8 個字元",
+    submit: "建立我的網站",
+    genericError: "發生錯誤",
+    alreadyHaveSite: "已經有網站了嗎？",
+    logIn: "登入",
+  },
+};

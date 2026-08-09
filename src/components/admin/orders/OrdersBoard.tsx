@@ -3,13 +3,11 @@
 import { useMemo, useRef, useState } from "react";
 import { UtensilsCrossed, ShoppingBag, Bike } from "lucide-react";
 import type { SerializedOrder } from "@/lib/types";
-import {
-  DINING_METHODS,
-  DINING_METHOD_LABEL,
-  type DiningMethod,
-} from "@/lib/constants";
+import { DINING_METHODS, type DiningMethod } from "@/lib/constants";
 import { groupOrdersByDate } from "@/lib/orderGrouping";
 import { usePolling } from "@/lib/hooks/usePolling";
+import { useDictionary } from "@/components/i18n/LocaleProvider";
+import { formatMessage } from "@/lib/i18n/format";
 import { OrderCard } from "@/components/admin/orders/OrderCard";
 
 const METHOD_ICON: Record<DiningMethod, typeof UtensilsCrossed> = {
@@ -29,6 +27,8 @@ export function OrdersBoard({
   branchId: string;
   initialOrders: SerializedOrder[];
 }) {
+  const { dict } = useDictionary();
+  const t = dict.adminOrders.board;
   const [orders, setOrders] = useState(initialOrders);
   const [activeMethod, setActiveMethod] = useState<DiningMethod>("DINE_IN");
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -101,7 +101,7 @@ export function OrdersBoard({
               }`}
             >
               <Icon className="size-4" />
-              {DINING_METHOD_LABEL[method]}
+              {dict.constants.diningMethod[method]}
               <span className="opacity-70">({count})</span>
             </button>
           );
@@ -110,7 +110,9 @@ export function OrdersBoard({
 
       {groups.length === 0 && (
         <div className="rounded-2xl bg-white p-10 text-center text-ink-400 shadow-soft">
-          No {mode === "pending" ? "pending" : "completed"} {DINING_METHOD_LABEL[activeMethod].toLowerCase()} orders
+          {formatMessage(mode === "pending" ? t.noPendingOrders : t.noCompletedOrders, {
+            method: dict.constants.diningMethod[activeMethod].toLowerCase(),
+          })}
         </div>
       )}
 

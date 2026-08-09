@@ -1,5 +1,6 @@
 import { getAdminSession } from "@/lib/adminAuth";
 import { getTenantBySlug } from "@/lib/tenant";
+import { getServerDictionary } from "@/lib/i18n/getServerDictionary";
 import { AdminTopBar } from "@/components/admin/AdminTopBar";
 import { TenantSettingsForm } from "@/components/admin/settings/TenantSettingsForm";
 
@@ -11,7 +12,11 @@ export default async function TenantSettingsPage({
   params: Promise<{ tenantSlug: string }>;
 }) {
   const { tenantSlug } = await params;
-  const [tenant, session] = await Promise.all([getTenantBySlug(tenantSlug), getAdminSession()]);
+  const [tenant, session, { dict }] = await Promise.all([
+    getTenantBySlug(tenantSlug),
+    getAdminSession(),
+    getServerDictionary(),
+  ]);
 
   return (
     <div className="flex flex-1 flex-col">
@@ -23,7 +28,7 @@ export default async function TenantSettingsPage({
       />
       <div className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6">
         <h1 className="mb-5 font-[family-name:var(--font-display)] text-2xl font-bold text-ink-900">
-          Site Settings
+          {dict.adminSettings.tenantSettings.heading}
         </h1>
         <TenantSettingsForm tenant={JSON.parse(JSON.stringify(tenant))} />
       </div>

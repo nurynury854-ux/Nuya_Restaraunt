@@ -1,0 +1,41 @@
+export const platformAdmin = {
+  login: {
+    title: "Platform Admin",
+    subtitle: "Owner access only",
+    email: "Email",
+    password: "Password",
+    loginFailed: "Login failed",
+    logIn: "Log In",
+  },
+  dashboard: {
+    headerSuffix: " — Platform Admin",
+    logOut: "Log Out",
+  },
+  table: {
+    searchPlaceholder: "Search by name or URL...",
+    tenantsCount: "{total} tenant{plural}",
+    loadError: "Couldn't load tenants. Please try again.",
+    toggleError: "Couldn't update that tenant. Please try again.",
+    deleteError: "Couldn't delete that tenant. Please try again.",
+    business: "Business",
+    owner: "Owner",
+    locations: "Locations",
+    orders: "Orders",
+    created: "Created",
+    active: "Active",
+    suspended: "Suspended",
+    deleteAria: "Delete {name}",
+    noTenants: "No tenants found.",
+    loading: "Loading...",
+    pageOf: "Page {page} of {totalPages}",
+    deleteModal: {
+      title: "Delete {name}?",
+      description:
+        "This permanently deletes this tenant's locations, menu, time slots, orders, and admin accounts. This cannot be undone.",
+      typeToConfirmPrefix: "Type ",
+      typeToConfirmSuffix: " to confirm.",
+      cancel: "Cancel",
+      deletePermanently: "Delete permanently",
+    },
+  },
+};

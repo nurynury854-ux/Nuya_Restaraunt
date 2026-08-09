@@ -2,6 +2,7 @@
 
 import { Minus, Plus } from "lucide-react";
 import { motion } from "framer-motion";
+import { useDictionary } from "@/components/i18n/LocaleProvider";
 
 export function QuantityStepper({
   quantity,
@@ -12,6 +13,7 @@ export function QuantityStepper({
   onChange: (next: number) => void;
   size?: "sm" | "md";
 }) {
+  const { dict } = useDictionary();
   const dims = size === "sm" ? "h-7 w-7" : "h-8 w-8";
   return (
     <div className="inline-flex items-center gap-2.5">
@@ -20,7 +22,7 @@ export function QuantityStepper({
         whileTap={{ scale: 0.88 }}
         onClick={() => onChange(quantity - 1)}
         className={`flex ${dims} items-center justify-center rounded-full border border-ink-100 bg-white text-ink-700 transition-colors hover:border-brand-300 hover:text-brand-600 cursor-pointer`}
-        aria-label="Decrease quantity"
+        aria-label={dict.customer.quantityStepper.decrease}
       >
         <Minus className="size-3.5" />
       </motion.button>
@@ -32,7 +34,7 @@ export function QuantityStepper({
         whileTap={{ scale: 0.88 }}
         onClick={() => onChange(quantity + 1)}
         className={`flex ${dims} items-center justify-center rounded-full bg-brand-500 text-white transition-colors hover:bg-brand-600 cursor-pointer`}
-        aria-label="Increase quantity"
+        aria-label={dict.customer.quantityStepper.increase}
       >
         <Plus className="size-3.5" />
       </motion.button>

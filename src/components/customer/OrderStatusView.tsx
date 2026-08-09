@@ -15,9 +15,13 @@ import {
   Wallet,
 } from "lucide-react";
 import type { SerializedOrder } from "@/lib/types";
-import { DINING_METHOD_LABEL, PAYMENT_METHOD_LABEL, type DiningMethod } from "@/lib/constants";
+import { type DiningMethod } from "@/lib/constants";
 import { formatOrderTime } from "@/lib/format";
 import { usePolling } from "@/lib/hooks/usePolling";
+import { useDictionary } from "@/components/i18n/LocaleProvider";
+import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
+import { formatMessage } from "@/lib/i18n/format";
+import type { Dictionary } from "@/lib/i18n/getDictionary";
 import { Card } from "@/components/ui/Card";
 
 type TrackedOrder = SerializedOrder & {
@@ -26,39 +30,43 @@ type TrackedOrder = SerializedOrder & {
 
 const POLL_INTERVAL_MS = 5000;
 
-function statusInfo(status: string, diningMethod: string) {
+function statusInfo(
+  status: string,
+  diningMethod: string,
+  t: Dictionary["checkout"]["tracking"]["status"]
+) {
   const method = diningMethod as DiningMethod;
   switch (status) {
     case "COMPLETED":
       return {
         icon: CheckCircle2,
         tone: "text-success-600 bg-success-500/10",
-        label: "Completed",
+        label: t.completedLabel,
         description:
           method === "PICKUP"
-            ? "Your order is ready for pickup!"
+            ? t.completedPickup
             : method === "DELIVERY"
-              ? "Your order is complete."
-              : "Order complete — enjoy your meal!",
+              ? t.completedDelivery
+              : t.completedDineIn,
       };
     case "CANCELLED":
       return {
         icon: XCircle,
         tone: "text-danger-600 bg-danger-500/10",
-        label: "Cancelled",
-        description: "This order was cancelled.",
+        label: t.cancelledLabel,
+        description: t.cancelledDescription,
       };
     default:
       return {
         icon: Clock3,
         tone: "text-brand-600 bg-brand-500/10",
-        label: "Being Prepared",
+        label: t.pendingLabel,
         description:
           method === "PICKUP"
-            ? "We've got your order and we're getting it ready for pickup."
+            ? t.pendingPickup
             : method === "DELIVERY"
-              ? "We've got your order and we're getting it ready for delivery."
-              : "We've got your order and we're working on it!",
+              ? t.pendingDelivery
+              : t.pendingDineIn,
       };
   }
 }
@@ -73,6 +81,8 @@ export function OrderStatusView({
   initialOrder: TrackedOrder;
 }) {
   const [order, setOrder] = useState(initialOrder);
+  const { dict } = useDictionary();
+  const t = dict.checkout.tracking;
 
   usePolling(() => {
     fetch(`/api/orders/track/${orderId}`)
@@ -83,11 +93,14 @@ export function OrderStatusView({
       .catch(() => null);
   }, POLL_INTERVAL_MS);
 
-  const status = statusInfo(order.status, order.diningMethod);
+  const status = statusInfo(order.status, order.diningMethod, t.status);
   const StatusIcon = status.icon;
 
   return (
     <div className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-5 px-4 py-8 sm:py-12">
+      <div className="flex justify-end">
+        <LanguageSwitcher />
+      </div>
       <div className="text-center">
         {order.tenant.logoUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -116,13 +129,15 @@ export function OrderStatusView({
         <p className="mt-1 text-lg font-bold text-ink-900">{status.label}</p>
         <p className="text-sm text-ink-500">{status.description}</p>
         <p className="mt-2 rounded-full bg-cream-100 px-3.5 py-1 text-xs font-semibold text-ink-600">
-          Order #{order.orderNo}
+          {formatMessage(t.orderNumber, { orderNo: order.orderNo })}
         </p>
-        <p className="text-xs text-ink-400">Placed {formatOrderTime(order.createdAt)}</p>
+        <p className="text-xs text-ink-400">
+          {formatMessage(t.placed, { time: formatOrderTime(order.createdAt, dict.common.today) })}
+        </p>
       </Card>
 
       <Card className="flex flex-col gap-3 p-5">
-        <h2 className="text-sm font-semibold text-ink-900">Order Details</h2>
+        <h2 className="text-sm font-semibold text-ink-900">{t.orderDetails}</h2>
 
         <div className="flex items-center gap-2.5 text-sm text-ink-700">
           <User className="size-4 shrink-0 text-brand-500" />
@@ -135,32 +150,34 @@ export function OrderStatusView({
         {order.tableNumber && (
           <div className="flex items-center gap-2.5 text-sm text-ink-700">
             <MapPin className="size-4 shrink-0 text-brand-500" />
-            <span>Table: {order.tableNumber}</span>
+            <span>{formatMessage(t.table, { tableNumber: order.tableNumber })}</span>
           </div>
         )}
         {order.timeSlot && (
           <div className="flex items-center gap-2.5 text-sm text-ink-700">
             <Clock className="size-4 shrink-0 text-brand-500" />
-            <span>Time: {order.timeSlot.label}</span>
+            <span>{formatMessage(t.time, { label: order.timeSlot.label })}</span>
           </div>
         )}
         {order.deliveryAddress && (
           <div className="flex items-center gap-2.5 text-sm text-ink-700">
             <MapPin className="size-4 shrink-0 text-brand-500" />
-            <span>Delivery to: {order.deliveryAddress}</span>
+            <span>{formatMessage(t.deliveryTo, { address: order.deliveryAddress })}</span>
           </div>
         )}
         {order.notes && (
           <div className="flex items-start gap-2.5 text-sm text-ink-700">
             <StickyNote className="mt-0.5 size-4 shrink-0 text-brand-500" />
-            <span>Notes: {order.notes}</span>
+            <span>{formatMessage(t.notes, { notes: order.notes })}</span>
           </div>
         )}
         <div className="flex items-center gap-2.5 text-sm text-ink-700">
           <Wallet className="size-4 shrink-0 text-brand-500" />
           <span>
-            {DINING_METHOD_LABEL[order.diningMethod as DiningMethod]} ·{" "}
-            {PAYMENT_METHOD_LABEL[order.paymentMethod as keyof typeof PAYMENT_METHOD_LABEL]}
+            {dict.constants.diningMethod[order.diningMethod as DiningMethod]} ·{" "}
+            {dict.constants.paymentMethod[
+              order.paymentMethod as keyof typeof dict.constants.paymentMethod
+            ]}
           </span>
         </div>
 
@@ -183,7 +200,7 @@ export function OrderStatusView({
         </div>
 
         <div className="flex items-center justify-between border-t border-ink-100 pt-3 text-base font-semibold text-ink-900">
-          <span>Total</span>
+          <span>{t.total}</span>
           <span className="text-brand-600">${order.totalAmount}</span>
         </div>
       </Card>
@@ -192,7 +209,7 @@ export function OrderStatusView({
         href={`/${tenantSlug}`}
         className="mx-auto text-sm font-medium text-brand-600 hover:text-brand-700"
       >
-        Back to {order.tenant.businessName}
+        {formatMessage(t.backTo, { businessName: order.tenant.businessName })}
       </Link>
     </div>
   );

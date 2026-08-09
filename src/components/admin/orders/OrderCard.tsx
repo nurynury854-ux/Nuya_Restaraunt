@@ -3,13 +3,10 @@
 import Link from "next/link";
 import { User, Phone, MapPin, Clock, StickyNote, Wallet, Printer } from "lucide-react";
 import type { SerializedOrder } from "@/lib/types";
-import {
-  DINING_METHOD_LABEL,
-  PAYMENT_METHOD_LABEL,
-  ORDER_STATUS_LABEL,
-  type OrderStatus,
-} from "@/lib/constants";
+import { type OrderStatus } from "@/lib/constants";
 import { formatOrderTime } from "@/lib/format";
+import { useDictionary } from "@/components/i18n/LocaleProvider";
+import { formatMessage } from "@/lib/i18n/format";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -25,6 +22,8 @@ export function OrderCard({
   onCancel?: () => void;
   busy?: boolean;
 }) {
+  const { dict } = useDictionary();
+  const t = dict.adminOrders.card;
   const isCancelled = order.status === "CANCELLED";
 
   return (
@@ -33,20 +32,28 @@ export function OrderCard({
         <div>
           <div className="flex flex-wrap items-center gap-2">
             <p className="font-semibold text-ink-900">{order.orderNo}</p>
-            <Badge tone="brand">{DINING_METHOD_LABEL[order.diningMethod as keyof typeof DINING_METHOD_LABEL]}</Badge>
+            <Badge tone="brand">{dict.constants.diningMethod[order.diningMethod as keyof typeof dict.constants.diningMethod]}</Badge>
             {order.status !== "PENDING" && (
               <Badge tone={isCancelled ? "danger" : "success"}>
-                {ORDER_STATUS_LABEL[order.status as OrderStatus]}
+                {dict.constants.orderStatus[order.status as OrderStatus]}
               </Badge>
             )}
           </div>
           <p className="mt-1 text-xs text-ink-400">
-            Placed {formatOrderTime(order.createdAt)}
+            {formatMessage(t.placed, { time: formatOrderTime(order.createdAt, dict.common.today) })}
             {order.status === "COMPLETED" && (
-              <> · Completed {formatOrderTime(order.updatedAt)}</>
+              <>
+                {formatMessage(t.completedAt, {
+                  time: formatOrderTime(order.updatedAt, dict.common.today),
+                })}
+              </>
             )}
             {order.status === "CANCELLED" && (
-              <> · Cancelled {formatOrderTime(order.updatedAt)}</>
+              <>
+                {formatMessage(t.cancelledAt, {
+                  time: formatOrderTime(order.updatedAt, dict.common.today),
+                })}
+              </>
             )}
           </p>
         </div>
@@ -55,7 +62,7 @@ export function OrderCard({
           <Link
             href={`/print/orders/${order.id}`}
             target="_blank"
-            aria-label={`Print ticket for order ${order.orderNo}`}
+            aria-label={formatMessage(t.printAriaLabel, { orderNo: order.orderNo })}
             className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg text-ink-400 transition-colors hover:bg-ink-100 hover:text-brand-600"
           >
             <Printer className="size-4" />
@@ -75,24 +82,24 @@ export function OrderCard({
         {order.tableNumber && (
           <div className="flex items-center gap-2">
             <MapPin className="size-3.5 shrink-0 text-brand-500" />
-            <span>Table: {order.tableNumber}</span>
+            <span>{formatMessage(t.table, { tableNumber: order.tableNumber })}</span>
           </div>
         )}
         {order.timeSlot && (
           <div className="flex items-center gap-2">
             <Clock className="size-3.5 shrink-0 text-brand-500" />
-            <span>Time: {order.timeSlot.label}</span>
+            <span>{formatMessage(t.time, { label: order.timeSlot.label })}</span>
           </div>
         )}
         {order.deliveryAddress && (
           <div className="flex items-center gap-2 sm:col-span-2">
             <MapPin className="size-3.5 shrink-0 text-brand-500" />
-            <span>Delivery to: {order.deliveryAddress}</span>
+            <span>{formatMessage(t.deliveryTo, { address: order.deliveryAddress })}</span>
           </div>
         )}
         <div className="flex items-center gap-2">
           <Wallet className="size-3.5 shrink-0 text-brand-500" />
-          <span>{PAYMENT_METHOD_LABEL[order.paymentMethod as keyof typeof PAYMENT_METHOD_LABEL]}</span>
+          <span>{dict.constants.paymentMethod[order.paymentMethod as keyof typeof dict.constants.paymentMethod]}</span>
         </div>
       </div>
 
@@ -114,7 +121,7 @@ export function OrderCard({
       {order.notes && (
         <div className="flex items-start gap-2 text-sm text-ink-700">
           <StickyNote className="mt-0.5 size-3.5 shrink-0 text-brand-500" />
-          <span>Notes: {order.notes}</span>
+          <span>{formatMessage(t.notes, { notes: order.notes })}</span>
         </div>
       )}
 
@@ -122,12 +129,12 @@ export function OrderCard({
         <div className="flex justify-end gap-2 border-t border-ink-100 pt-3">
           {onCancel && (
             <Button variant="ghost" size="sm" disabled={busy} onClick={onCancel}>
-              Cancel Order
+              {t.cancelOrder}
             </Button>
           )}
           {onComplete && (
             <Button size="sm" loading={busy} onClick={onComplete}>
-              Mark Complete
+              {t.markComplete}
             </Button>
           )}
         </div>

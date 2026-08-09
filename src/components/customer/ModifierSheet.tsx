@@ -5,6 +5,8 @@ import { AnimatePresence, motion } from "framer-motion";
 import { X, Check } from "lucide-react";
 import type { MenuItemWithModifiers } from "@/components/customer/MenuItemRow";
 import { useOrderStore, type SelectedModifier } from "@/lib/store/orderStore";
+import { useDictionary } from "@/components/i18n/LocaleProvider";
+import { formatMessage } from "@/lib/i18n/format";
 import { QuantityStepper } from "@/components/ui/QuantityStepper";
 import { Button } from "@/components/ui/Button";
 
@@ -16,6 +18,8 @@ export function ModifierSheet({
   onClose: () => void;
 }) {
   const addItem = useOrderStore((s) => s.addItem);
+  const { dict } = useDictionary();
+  const t = dict.customer.modifierSheet;
   const [selections, setSelections] = useState<Record<string, Set<string>>>({});
   const [quantity, setQuantity] = useState(1);
 
@@ -99,7 +103,7 @@ export function ModifierSheet({
           <button
             onClick={onClose}
             className="shrink-0 cursor-pointer text-ink-400 hover:text-ink-700"
-            aria-label="Close"
+            aria-label={t.close}
           >
             <X className="size-5" />
           </button>
@@ -116,16 +120,14 @@ export function ModifierSheet({
                   <p className="text-sm font-semibold text-ink-900">{group.name}</p>
                   <span className={`text-xs ${unmet ? "text-danger-500" : "text-ink-400"}`}>
                     {group.minSelect > 0
-                      ? `Select ${group.minSelect}${
-                          group.maxSelect && group.maxSelect !== group.minSelect
-                            ? `-${group.maxSelect}`
-                            : ""
-                        }`
+                      ? group.maxSelect && group.maxSelect !== group.minSelect
+                        ? formatMessage(t.selectRange, { min: group.minSelect, max: group.maxSelect })
+                        : formatMessage(t.selectExact, { count: group.minSelect })
                       : isMulti
                         ? group.maxSelect
-                          ? `Select up to ${group.maxSelect}`
-                          : "Optional"
-                        : "Optional"}
+                          ? formatMessage(t.selectUpTo, { max: group.maxSelect })
+                          : t.optional
+                        : t.optional}
                   </span>
                 </div>
                 <div className="flex flex-col gap-1.5">
@@ -170,7 +172,7 @@ export function ModifierSheet({
         <div className="mt-5 flex items-center justify-between border-t border-ink-100 pt-4">
           <QuantityStepper quantity={quantity} onChange={(n) => setQuantity(Math.max(1, n))} />
           <Button onClick={confirm} disabled={unmetGroups.length > 0}>
-            Add · ${unitPrice * quantity}
+            {t.add} · ${unitPrice * quantity}
           </Button>
         </div>
       </motion.div>

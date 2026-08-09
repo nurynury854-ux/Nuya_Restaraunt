@@ -87,6 +87,16 @@ At `/platform-admin`, gated by the `PLATFORM_ADMIN_EMAIL`/`PLATFORM_ADMIN_PASSWO
 ### Live updates
 New orders, order status changes, time-slot edits, and menu changes all propagate automatically — no manual refresh anywhere. Every screen quietly re-checks the database every few seconds (~4s on the admin order boards/alert, ~8–10s elsewhere) and pauses while the tab is in the background. This polling approach (rather than a persistent push connection) is what makes it work reliably on Vercel's serverless hosting.
 
+### Language (Traditional Chinese / English)
+The entire app — marketing site, signup/login, every tenant's customer ordering flow, every tenant's admin panel, and the platform-admin dashboard — is bilingual, defaulting to Traditional Chinese (繁體中文) with an English toggle. A pill switcher (中文 / EN) sits in the top bar/header of every major surface.
+
+This is a hand-rolled dictionary system, not `next-intl` or Next's built-in i18n routing — the app already has tenant-slug-based routing (`/{tenantSlug}/...`) and a reserved-slug system, and neither needed disrupting with a locale URL prefix:
+- **Locale storage**: a plain (non-httpOnly) `locale` cookie, 1 year, no URL prefix. Server Components read it via `getLocale()`/`getServerDictionary()` (`src/lib/i18n/`); Client Components read it via the `useDictionary()` hook (`src/components/i18n/LocaleProvider.tsx`), which also writes the cookie and calls `router.refresh()` on change so Server Components pick it up too.
+- **Dictionaries**: one EN/ZH file pair per feature area under `src/lib/i18n/dictionaries/{en,zh}/` (e.g. `checkout.ts`, `adminMenu.ts`, `platformAdmin.ts`), merged into a single `Dictionary` type. The ZH file imports the EN file's inferred type and is checked against it, so a missing translation key is a build error, not a silently-blank string.
+- **Interpolation**: a small `formatMessage(template, vars)` handles `{placeholder}` substitution — no ICU pluralization library. English strings that need a plural "s" carry their own `{plural}` token that the caller resolves (`count === 1 ? "" : "s"`); Chinese translations simply don't reference it.
+- **Fonts**: `Noto Sans/Serif TC` load alongside the existing Latin fonts and sit in the same CSS `font-family` fallback chain, so Latin and CJK glyphs both render correctly from one stack — no locale-conditional font swapping.
+- **Scope**: this covers all *static* UI text — labels, buttons, headings, empty states, confirm dialogs. It deliberately does **not** cover dynamic, server-generated text: Zod validation messages and API `data.error` strings stay in English. Translating those would mean either localizing every server-side error string (a much bigger, separate effort) or silently swallowing real error detail — neither was worth doing as a side effect of this pass.
+
 ## Known simplifications (demo/early-product scope)
 
 - One admin account = one tenant (no multi-business logins yet).
@@ -95,6 +105,7 @@ New orders, order status changes, time-slot edits, and menu changes all propagat
 - Option groups (modifiers) belong to one menu item each — there's no shared/reusable library, so a business re-creates a similar group (e.g. "Spice Level") on every item that needs it.
 - "Bank Transfer" payment shows a clearly-labeled empty QR placeholder — no real payment processing is wired up.
 - Live updates are polling-based (a few seconds of latency), not instant push.
+- Translation covers static UI text only — server-generated error/validation messages stay in English regardless of locale (see "Language" above).
 
 ## Local development
 
@@ -126,7 +137,7 @@ src/
         [branchId]/                branch-scoped admin panel
           orders/pending/, orders/completed/, menu/, timeslots/, settings/
     api/                           orders, menu, categories, timeslots, branches, tenant, uploads
-  components/                      ui/ (generic), customer/, admin/
+  components/                      ui/ (generic), customer/, admin/, i18n/ (LocaleProvider, LanguageSwitcher)
   lib/
     tenant.ts                      cached tenant-by-slug resolver, used by every tenant page
     session.ts, adminAuth.ts        signed session + the assertTenantOwns() ownership guard
@@ -134,6 +145,7 @@ src/
     hooks/usePolling.ts             shared interval-polling hook behind the live updates
     color.ts                       derives a hover shade from a tenant's brand color
     store/orderStore.ts             tenant-scoped cart/order-flow state
+    i18n/                          locale cookie, dictionaries (en/zh), getServerDictionary(), formatMessage()
 prisma/
   schema.prisma                    data model — Tenant at the top, everything else scoped under it
   seed.ts                          demo tenant (Joe's Cafe) — safe to re-run, won't duplicate data

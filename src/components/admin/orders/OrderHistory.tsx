@@ -3,17 +3,16 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { Search, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import type { SerializedOrder } from "@/lib/types";
-import {
-  DINING_METHODS,
-  DINING_METHOD_LABEL,
-  ORDER_STATUSES,
-  ORDER_STATUS_LABEL,
-} from "@/lib/constants";
+import { DINING_METHODS, ORDER_STATUSES } from "@/lib/constants";
+import { useDictionary } from "@/components/i18n/LocaleProvider";
+import { formatMessage } from "@/lib/i18n/format";
 import { Card } from "@/components/ui/Card";
 import { Input, Select, FieldWrapper } from "@/components/ui/Field";
 import { OrderCard } from "@/components/admin/orders/OrderCard";
 
 export function OrderHistory({ branchId }: { branchId: string }) {
+  const { dict } = useDictionary();
+  const t = dict.adminOrders.history;
   const [orderNo, setOrderNo] = useState("");
   const [phone, setPhone] = useState("");
   const [dateFrom, setDateFrom] = useState("");
@@ -53,12 +52,12 @@ export function OrderHistory({ branchId }: { branchId: string }) {
         setPageSize(data.pageSize);
       } catch {
         if (requestId !== requestIdRef.current) return;
-        setError("Couldn't load orders. Please try again.");
+        setError(t.loadError);
       } finally {
         if (requestId === requestIdRef.current) setLoading(false);
       }
     },
-    [branchId, orderNo, phone, dateFrom, dateTo, status, diningMethod]
+    [branchId, orderNo, phone, dateFrom, dateTo, status, diningMethod, t.loadError]
   );
 
   // Any filter change resets to page 1 and reloads, debounced so free-text
@@ -88,46 +87,46 @@ export function OrderHistory({ branchId }: { branchId: string }) {
     <div className="flex flex-col gap-4">
       <Card className="flex flex-col gap-3 p-4">
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          <FieldWrapper label="Order #">
+          <FieldWrapper label={t.orderNo}>
             <div className="relative">
               <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ink-300" />
               <Input
                 className="pl-9"
-                placeholder="e.g. 0725-001"
+                placeholder={t.orderNoPlaceholder}
                 value={orderNo}
                 onChange={(e) => setOrderNo(e.target.value)}
               />
             </div>
           </FieldWrapper>
-          <FieldWrapper label="Customer phone">
+          <FieldWrapper label={t.customerPhone}>
             <Input
-              placeholder="Search phone"
+              placeholder={t.phonePlaceholder}
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
             />
           </FieldWrapper>
-          <FieldWrapper label="Status">
+          <FieldWrapper label={t.status}>
             <Select value={status} onChange={(e) => setStatus(e.target.value)}>
-              <option value="">All statuses</option>
+              <option value="">{t.allStatuses}</option>
               {ORDER_STATUSES.map((s) => (
                 <option key={s} value={s}>
-                  {ORDER_STATUS_LABEL[s]}
+                  {dict.constants.orderStatus[s]}
                 </option>
               ))}
             </Select>
           </FieldWrapper>
-          <FieldWrapper label="From date">
+          <FieldWrapper label={t.fromDate}>
             <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
           </FieldWrapper>
-          <FieldWrapper label="To date">
+          <FieldWrapper label={t.toDate}>
             <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
           </FieldWrapper>
-          <FieldWrapper label="Dining method">
+          <FieldWrapper label={t.diningMethod}>
             <Select value={diningMethod} onChange={(e) => setDiningMethod(e.target.value)}>
-              <option value="">All methods</option>
+              <option value="">{t.allMethods}</option>
               {DINING_METHODS.map((m) => (
                 <option key={m} value={m}>
-                  {DINING_METHOD_LABEL[m]}
+                  {dict.constants.diningMethod[m]}
                 </option>
               ))}
             </Select>
@@ -138,7 +137,7 @@ export function OrderHistory({ branchId }: { branchId: string }) {
       {error && <p className="text-sm text-danger-500">{error}</p>}
 
       <p className="text-sm text-ink-400">
-        {total} order{total === 1 ? "" : "s"} found
+        {formatMessage(t.resultsFound, { total, plural: total === 1 ? "" : "s" })}
       </p>
 
       <div className="flex flex-col gap-3">
@@ -147,13 +146,13 @@ export function OrderHistory({ branchId }: { branchId: string }) {
         ))}
         {!loading && orders.length === 0 && (
           <div className="rounded-2xl bg-white p-10 text-center text-ink-400 shadow-soft">
-            No orders match those filters.
+            {t.noResults}
           </div>
         )}
         {loading && (
           <div className="flex items-center justify-center gap-2 py-6 text-sm text-ink-400">
             <Loader2 className="size-4 animate-spin" />
-            Loading...
+            {t.loading}
           </div>
         )}
       </div>
@@ -168,7 +167,7 @@ export function OrderHistory({ branchId }: { branchId: string }) {
             <ChevronLeft className="size-4" />
           </button>
           <span className="text-sm text-ink-500">
-            Page {page} of {totalPages}
+            {formatMessage(t.pageOf, { page, totalPages })}
           </span>
           <button
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}

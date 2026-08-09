@@ -8,6 +8,8 @@ import { useOrderStore, cartTotal, cartCount } from "@/lib/store/orderStore";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { CartLines } from "@/components/customer/cart/CartLines";
+import { useDictionary } from "@/components/i18n/LocaleProvider";
+import { formatMessage } from "@/lib/i18n/format";
 
 export function CartWidget({
   variant,
@@ -23,6 +25,9 @@ export function CartWidget({
   const total = cartTotal(cart);
   const count = cartCount(cart);
   const [expanded, setExpanded] = useState(false);
+  const { dict } = useDictionary();
+  const t = dict.customer.cart;
+  const plural = count === 1 ? "" : "s";
 
   function goCheckout() {
     if (disabled) return;
@@ -35,19 +40,19 @@ export function CartWidget({
       <Card className="flex flex-col gap-4 p-5">
         <div className="flex items-center gap-2">
           <ShoppingBag className="size-5 text-brand-500" />
-          <h3 className="font-semibold text-ink-900">Your Cart</h3>
+          <h3 className="font-semibold text-ink-900">{t.yourCart}</h3>
         </div>
         <CartLines items={cart} />
         {cart.length > 0 && (
           <>
             <div className="border-t border-ink-100 pt-3">
               <div className="flex items-center justify-between text-base font-semibold text-ink-900">
-                <span>Total</span>
+                <span>{t.total}</span>
                 <span className="text-brand-600">${total}</span>
               </div>
             </div>
             <Button fullWidth size="lg" disabled={disabled} onClick={goCheckout}>
-              {disabled ? "Location Closed" : `Checkout (${count} item${count === 1 ? "" : "s"})`}
+              {disabled ? t.locationClosed : formatMessage(t.checkoutWithCount, { count, plural })}
             </Button>
           </>
         )}
@@ -70,7 +75,7 @@ export function CartWidget({
           >
             <span className="flex items-center gap-2 text-sm">
               <ShoppingBag className="size-4" />
-              {count} item{count === 1 ? "" : "s"}
+              {formatMessage(t.itemCount, { count, plural })}
               <ChevronUp className="size-4" />
             </span>
             <span className="font-semibold">${total}</span>
@@ -98,7 +103,7 @@ export function CartWidget({
               className="pb-safe fixed inset-x-0 bottom-0 z-50 max-h-[80dvh] overflow-y-auto rounded-t-3xl bg-cream-50 p-5 shadow-lift"
             >
               <div className="mb-3 flex items-center justify-between">
-                <h3 className="font-semibold text-ink-900">Your Cart</h3>
+                <h3 className="font-semibold text-ink-900">{t.yourCart}</h3>
                 <button
                   onClick={() => setExpanded(false)}
                   className="cursor-pointer text-ink-400 hover:text-ink-700"
@@ -110,11 +115,11 @@ export function CartWidget({
               {cart.length > 0 && (
                 <div className="mt-4 border-t border-ink-100 pt-3">
                   <div className="mb-3 flex items-center justify-between text-base font-semibold text-ink-900">
-                    <span>Total</span>
+                    <span>{t.total}</span>
                     <span className="text-brand-600">${total}</span>
                   </div>
                   <Button fullWidth size="lg" disabled={disabled} onClick={goCheckout}>
-                    {disabled ? "Location Closed" : "Checkout"}
+                    {disabled ? t.locationClosed : t.checkout}
                   </Button>
                 </div>
               )}

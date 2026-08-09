@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { Plus, UtensilsCrossed } from "lucide-react";
 import type { MenuItem, ModifierGroup, ModifierOption } from "@/generated/prisma/client";
 import { useOrderStore } from "@/lib/store/orderStore";
+import { useDictionary } from "@/components/i18n/LocaleProvider";
 import { QuantityStepper } from "@/components/ui/QuantityStepper";
 import { Card } from "@/components/ui/Card";
 import { ModifierSheet } from "@/components/customer/ModifierSheet";
@@ -25,6 +26,7 @@ export function MenuItemRow({ item }: { item: MenuItemWithModifiers }) {
   );
   const addItem = useOrderStore((s) => s.addItem);
   const setItemQuantity = useOrderStore((s) => s.setItemQuantity);
+  const { dict } = useDictionary();
 
   return (
     <>
@@ -58,7 +60,7 @@ export function MenuItemRow({ item }: { item: MenuItemWithModifiers }) {
             className="relative flex shrink-0 cursor-pointer items-center gap-1.5 rounded-xl bg-brand-500 px-3.5 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-600"
           >
             <Plus className="size-4" />
-            Add
+            {dict.customer.menu.add}
             {cartQuantity > 0 && (
               <span className="absolute -right-2 -top-2 flex size-5 items-center justify-center rounded-full bg-ink-900 text-[11px] font-semibold text-white">
                 {cartQuantity}
@@ -80,7 +82,7 @@ export function MenuItemRow({ item }: { item: MenuItemWithModifiers }) {
             className="flex shrink-0 cursor-pointer items-center gap-1.5 rounded-xl bg-brand-500 px-3.5 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-600"
           >
             <Plus className="size-4" />
-            Add
+            {dict.customer.menu.add}
           </motion.button>
         )}
       </Card>

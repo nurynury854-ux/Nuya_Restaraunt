@@ -6,35 +6,37 @@ import { motion } from "framer-motion";
 import { Banknote, QrCode, Check } from "lucide-react";
 import { useCheckoutGuard } from "@/lib/hooks/useCheckoutGuard";
 import { useOrderStore } from "@/lib/store/orderStore";
+import { useDictionary } from "@/components/i18n/LocaleProvider";
 import { OrderSummary } from "@/components/customer/checkout/OrderSummary";
 import { Button } from "@/components/ui/Button";
-import { PAYMENT_METHODS, PAYMENT_METHOD_LABEL, type PaymentMethod } from "@/lib/constants";
+import { PAYMENT_METHODS, type PaymentMethod } from "@/lib/constants";
 
 const METHOD_ICON = {
   CASH: Banknote,
   TRANSFER: QrCode,
 } as const;
 
-const METHOD_DESC: Record<PaymentMethod, string> = {
-  CASH: "Pay with cash at pickup / delivery",
-  TRANSFER: "Scan a QR code to complete your transfer",
-};
-
 export default function CheckoutPaymentPage() {
   const ready = useCheckoutGuard({ requireCart: true });
   const router = useRouter();
   const { tenantSlug } = useParams<{ tenantSlug: string }>();
+  const { dict } = useDictionary();
+  const t = dict.checkout.payment;
+  const METHOD_DESC: Record<PaymentMethod, string> = {
+    CASH: t.cashDesc,
+    TRANSFER: t.transferDesc,
+  };
   const paymentMethod = useOrderStore((s) => s.paymentMethod);
   const setPaymentMethod = useOrderStore((s) => s.setPaymentMethod);
   const [error, setError] = useState("");
 
   if (!ready) {
-    return <div className="flex flex-1 items-center justify-center text-ink-400">Loading...</div>;
+    return <div className="flex flex-1 items-center justify-center text-ink-400">{dict.common.loading}</div>;
   }
 
   function handleNext() {
     if (!paymentMethod) {
-      setError("Please select a payment method");
+      setError(t.selectMethodError);
       return;
     }
     router.push(`/${tenantSlug}/checkout/review`);
@@ -45,7 +47,7 @@ export default function CheckoutPaymentPage() {
       <OrderSummary />
 
       <div className="flex flex-col gap-4 rounded-2xl bg-white p-5 shadow-soft">
-        <h2 className="font-semibold text-ink-900">Choose a Payment Method</h2>
+        <h2 className="font-semibold text-ink-900">{t.heading}</h2>
 
         <div className="grid gap-3 sm:grid-cols-2">
           {PAYMENT_METHODS.map((method) => {
@@ -71,7 +73,7 @@ export default function CheckoutPaymentPage() {
                   </span>
                 )}
                 <Icon className={`size-6 ${active ? "text-brand-600" : "text-ink-500"}`} />
-                <span className="font-medium text-ink-900">{PAYMENT_METHOD_LABEL[method]}</span>
+                <span className="font-medium text-ink-900">{dict.constants.paymentMethod[method]}</span>
                 <span className="text-xs text-ink-500">{METHOD_DESC[method]}</span>
               </button>
             );
@@ -89,24 +91,22 @@ export default function CheckoutPaymentPage() {
           >
             <div className="flex size-40 items-center justify-center rounded-xl border-2 border-dashed border-brand-300 bg-white text-center">
               <span className="px-4 text-xs text-ink-400">
-                QR Code
+                {t.qrCode}
                 <br />
-                provided by the store
+                {t.qrCodeProvidedByStore}
               </span>
             </div>
-            <p className="text-center text-xs text-ink-500">
-              After you submit your order, scan the store&apos;s transfer QR code to complete payment
-            </p>
+            <p className="text-center text-xs text-ink-500">{t.qrCodeInstructions}</p>
           </motion.div>
         )}
       </div>
 
       <div className="flex gap-3">
         <Button variant="outline" size="lg" onClick={() => router.push(`/${tenantSlug}/checkout/details`)}>
-          Back
+          {t.back}
         </Button>
         <Button fullWidth size="lg" onClick={handleNext}>
-          Next: Review Order
+          {t.nextReview}
         </Button>
       </div>
     </div>

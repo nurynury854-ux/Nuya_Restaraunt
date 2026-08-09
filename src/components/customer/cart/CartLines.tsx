@@ -2,14 +2,17 @@
 
 import { X } from "lucide-react";
 import { useOrderStore, cartLineUnitPrice, type CartItem } from "@/lib/store/orderStore";
+import { useDictionary } from "@/components/i18n/LocaleProvider";
 import { QuantityStepper } from "@/components/ui/QuantityStepper";
 
 export function CartLines({ items }: { items: CartItem[] }) {
   const setItemQuantity = useOrderStore((s) => s.setItemQuantity);
   const removeItem = useOrderStore((s) => s.removeItem);
+  const { dict } = useDictionary();
+  const t = dict.customer.cart;
 
   if (items.length === 0) {
-    return <p className="py-6 text-center text-sm text-ink-400">Your cart is empty — go add some items!</p>;
+    return <p className="py-6 text-center text-sm text-ink-400">{t.empty}</p>;
   }
 
   return (
@@ -23,7 +26,10 @@ export function CartLines({ items }: { items: CartItem[] }) {
                 {item.modifiers.map((m) => m.name).join(", ")}
               </p>
             )}
-            <p className="text-xs text-ink-500">${cartLineUnitPrice(item)} each</p>
+            <p className="text-xs text-ink-500">
+              ${cartLineUnitPrice(item)}
+              {t.each}
+            </p>
           </div>
           <QuantityStepper
             size="sm"
@@ -33,7 +39,7 @@ export function CartLines({ items }: { items: CartItem[] }) {
           <button
             onClick={() => removeItem(item.id)}
             className="cursor-pointer text-ink-300 transition-colors hover:text-danger-500"
-            aria-label="Remove item"
+            aria-label={t.removeItem}
           >
             <X className="size-4" />
           </button>

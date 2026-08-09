@@ -7,6 +7,8 @@ import { Check, Loader2, Mail, Lock, Store, X } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { FieldWrapper, Input } from "@/components/ui/Field";
 import { Button } from "@/components/ui/Button";
+import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
+import { useDictionary } from "@/components/i18n/LocaleProvider";
 import { PLATFORM_NAME } from "@/lib/constants";
 import { slugify } from "@/lib/reservedSlugs";
 
@@ -14,6 +16,8 @@ type SlugStatus = "idle" | "checking" | "available" | "unavailable";
 
 export default function SignupPage() {
   const router = useRouter();
+  const { dict } = useDictionary();
+  const t = dict.auth.signup;
 
   const [businessName, setBusinessName] = useState("");
   const [slug, setSlug] = useState("");
@@ -82,13 +86,13 @@ export default function SignupPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "Something went wrong");
+        setError(data.error ?? t.genericError);
         setLoading(false);
         return;
       }
       router.push(`/${data.tenantSlug}/admin`);
     } catch {
-      setError("Network error — please try again");
+      setError(dict.common.networkError);
       setLoading(false);
     }
   }
@@ -102,6 +106,9 @@ export default function SignupPage() {
 
   return (
     <div className="flex flex-1 flex-col items-center justify-center px-4 py-14">
+      <div className="mb-4 flex justify-center">
+        <LanguageSwitcher />
+      </div>
       <div className="mb-6 text-center">
         <Link
           href="/"
@@ -109,19 +116,19 @@ export default function SignupPage() {
         >
           {PLATFORM_NAME}
         </Link>
-        <p className="mt-1 text-sm text-ink-500">Create your online ordering site</p>
+        <p className="mt-1 text-sm text-ink-500">{t.subtitle}</p>
       </div>
 
       <Card className="w-full max-w-md p-6">
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <FieldWrapper label="Business name" required>
+          <FieldWrapper label={t.businessName} required>
             <div className="relative">
               <Store className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ink-300" />
               <Input
                 className="pl-9"
                 value={businessName}
                 onChange={(e) => setBusinessName(e.target.value)}
-                placeholder="e.g. Joe's Cafe"
+                placeholder={t.businessNamePlaceholder}
                 autoFocus
                 required
               />
@@ -129,10 +136,10 @@ export default function SignupPage() {
           </FieldWrapper>
 
           <FieldWrapper
-            label="Your site's URL"
+            label={t.siteUrl}
             required
-            hint={slugStatus === "unavailable" ? undefined : "Letters, numbers, and hyphens only"}
-            error={slugStatus === "unavailable" ? slugReason || "That URL is taken" : undefined}
+            hint={slugStatus === "unavailable" ? undefined : t.siteUrlHint}
+            error={slugStatus === "unavailable" ? slugReason || t.siteUrlTaken : undefined}
           >
             <div className="flex items-center gap-2">
               <span className="whitespace-nowrap text-sm text-ink-400">yourplatform.com/</span>
@@ -159,18 +166,18 @@ export default function SignupPage() {
             </div>
           </FieldWrapper>
 
-          <FieldWrapper label="First location name" required hint="You can add more locations later">
+          <FieldWrapper label={t.firstLocationName} required hint={t.firstLocationHint}>
             <Input
               value={branchName}
               onChange={(e) => setBranchName(e.target.value)}
-              placeholder="e.g. Main Location"
+              placeholder={t.firstLocationPlaceholder}
               required
             />
           </FieldWrapper>
 
           <div className="my-1 border-t border-ink-100" />
 
-          <FieldWrapper label="Email" required>
+          <FieldWrapper label={t.email} required>
             <div className="relative">
               <Mail className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ink-300" />
               <Input
@@ -183,7 +190,7 @@ export default function SignupPage() {
             </div>
           </FieldWrapper>
 
-          <FieldWrapper label="Password" required hint="At least 8 characters">
+          <FieldWrapper label={t.password} required hint={t.passwordHint}>
             <div className="relative">
               <Lock className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ink-300" />
               <Input
@@ -199,15 +206,15 @@ export default function SignupPage() {
           {error && <p className="text-sm text-danger-500">{error}</p>}
 
           <Button type="submit" fullWidth size="lg" loading={loading} disabled={!canSubmit} className="mt-2">
-            Create My Site
+            {t.submit}
           </Button>
         </form>
       </Card>
 
       <p className="mt-5 text-sm text-ink-500">
-        Already have a site?{" "}
+        {t.alreadyHaveSite}{" "}
         <Link href="/login" className="font-medium text-brand-600 hover:text-brand-700">
-          Log in
+          {t.logIn}
         </Link>
       </p>
     </div>

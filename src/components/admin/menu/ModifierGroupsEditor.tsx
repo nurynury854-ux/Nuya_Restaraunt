@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Plus, Trash2, X, Check } from "lucide-react";
 import type { SerializedMenuItem } from "@/lib/types";
+import { useDictionary } from "@/components/i18n/LocaleProvider";
 import { ToggleSwitch } from "@/components/ui/ToggleSwitch";
 
 // Plain <input> throughout this file rather than the shared <Input> —
@@ -29,6 +30,8 @@ export function ModifierGroupsEditor({
   item: SerializedMenuItem;
   onChange: () => void;
 }) {
+  const { dict } = useDictionary();
+  const t = dict.adminMenu.modifiers;
   const [addingGroup, setAddingGroup] = useState(false);
   const [newGroupName, setNewGroupName] = useState("");
   const [busy, setBusy] = useState(false);
@@ -71,7 +74,7 @@ export function ModifierGroupsEditor({
   }
 
   async function deleteGroup(groupId: string) {
-    if (!confirm("Delete this option group and all its options?")) return;
+    if (!confirm(t.deleteGroupConfirm)) return;
     setBusy(true);
     try {
       await fetch(`/api/modifier-groups/${groupId}`, { method: "DELETE" });
@@ -127,9 +130,7 @@ export function ModifierGroupsEditor({
   return (
     <div className="flex flex-col gap-3 border-t border-ink-100 pt-3">
       {item.modifierGroups.length === 0 && !addingGroup && (
-        <p className="text-xs text-ink-400">
-          No option groups yet — e.g. Size, Spice Level, Add-ons
-        </p>
+        <p className="text-xs text-ink-400">{t.noGroupsYet}</p>
       )}
 
       {item.modifierGroups.map((group) => (
@@ -148,7 +149,7 @@ export function ModifierGroupsEditor({
             <button
               onClick={() => deleteGroup(group.id)}
               className="flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-lg text-danger-500 hover:bg-danger-500/10"
-              aria-label="Delete option group"
+              aria-label={t.deleteGroupAria}
             >
               <Trash2 className="size-3.5" />
             </button>
@@ -156,7 +157,7 @@ export function ModifierGroupsEditor({
 
           <div className="mb-2 flex items-center gap-3 text-xs text-ink-500">
             <label className="flex items-center gap-1.5">
-              Min
+              {t.min}
               <input
                 key={`${group.id}-min-${group.minSelect}`}
                 type="number"
@@ -171,12 +172,12 @@ export function ModifierGroupsEditor({
               />
             </label>
             <label className="flex items-center gap-1.5">
-              Max
+              {t.max}
               <input
                 key={`${group.id}-max-${group.maxSelect ?? "inf"}`}
                 type="number"
                 min={0}
-                placeholder="No limit"
+                placeholder={t.noLimit}
                 disabled={busy}
                 defaultValue={group.maxSelect ?? ""}
                 onBlur={(e) => {
@@ -207,7 +208,7 @@ export function ModifierGroupsEditor({
                 <button
                   onClick={() => deleteOption(option.id)}
                   className="flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-lg text-ink-400 hover:bg-danger-500/10 hover:text-danger-500"
-                  aria-label="Delete option"
+                  aria-label={t.deleteOptionAria}
                 >
                   <X className="size-3.5" />
                 </button>
@@ -219,7 +220,7 @@ export function ModifierGroupsEditor({
             <div className="mt-2 flex items-center gap-1.5">
               <input
                 autoFocus
-                placeholder="Option name"
+                placeholder={t.optionNamePlaceholder}
                 value={newOptionName}
                 onChange={(e) => setNewOptionName(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && createOption(group.id)}
@@ -252,7 +253,7 @@ export function ModifierGroupsEditor({
               className="mt-2 flex cursor-pointer items-center gap-1 text-xs font-medium text-brand-600 hover:text-brand-700"
             >
               <Plus className="size-3" />
-              Add option
+              {t.addOption}
             </button>
           )}
         </div>
@@ -262,7 +263,7 @@ export function ModifierGroupsEditor({
         <div className="flex items-center gap-1.5">
           <input
             autoFocus
-            placeholder="Group name (e.g. Size)"
+            placeholder={t.groupNamePlaceholder}
             value={newGroupName}
             onChange={(e) => setNewGroupName(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && createGroup()}
@@ -288,7 +289,7 @@ export function ModifierGroupsEditor({
           className="flex cursor-pointer items-center gap-1.5 self-start rounded-full border border-dashed border-ink-300 px-3 py-1.5 text-xs text-ink-500 hover:border-brand-400 hover:text-brand-600"
         >
           <Plus className="size-3" />
-          Add Option Group
+          {t.addOptionGroup}
         </button>
       )}
     </div>

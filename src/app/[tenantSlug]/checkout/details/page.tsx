@@ -6,6 +6,7 @@ import type { TimeSlot } from "@/generated/prisma/client";
 import { useCheckoutGuard } from "@/lib/hooks/useCheckoutGuard";
 import { useOrderStore } from "@/lib/store/orderStore";
 import { usePolling } from "@/lib/hooks/usePolling";
+import { useDictionary } from "@/components/i18n/LocaleProvider";
 import { OrderSummary } from "@/components/customer/checkout/OrderSummary";
 import { FieldWrapper, Input, Select, Textarea } from "@/components/ui/Field";
 import { Button } from "@/components/ui/Button";
@@ -16,6 +17,8 @@ export default function CheckoutDetailsPage() {
   const ready = useCheckoutGuard({ requireCart: true });
   const router = useRouter();
   const { tenantSlug } = useParams<{ tenantSlug: string }>();
+  const { dict } = useDictionary();
+  const t = dict.checkout.details;
 
   const branchId = useOrderStore((s) => s.branchId);
   const diningMethod = useOrderStore((s) => s.diningMethod);
@@ -66,25 +69,25 @@ export default function CheckoutDetailsPage() {
   }, SLOT_POLL_INTERVAL_MS);
 
   if (!ready) {
-    return <div className="flex flex-1 items-center justify-center text-ink-400">Loading...</div>;
+    return <div className="flex flex-1 items-center justify-center text-ink-400">{dict.common.loading}</div>;
   }
 
   function validate(): boolean {
     const next: Record<string, string> = {};
     if (diningMethod === "DINE_IN" && !customer.tableNumber.trim()) {
-      next.tableNumber = "Please enter a table number";
+      next.tableNumber = t.tableNumberError;
     }
     if (needsSlot && !customer.timeSlotId) {
-      next.timeSlotId = "Please select a time slot";
+      next.timeSlotId = t.timeSlotError;
     }
     if (!customer.name.trim()) {
-      next.name = "Please enter your name";
+      next.name = t.nameError;
     }
     if (!customer.phone.trim() || customer.phone.trim().length < 8) {
-      next.phone = "Please enter a valid phone number";
+      next.phone = t.phoneError;
     }
     if (diningMethod === "DELIVERY" && !customer.address.trim()) {
-      next.address = "Please enter a delivery address";
+      next.address = t.deliveryAddressError;
     }
     setErrors(next);
     return Object.keys(next).length === 0;
@@ -102,15 +105,15 @@ export default function CheckoutDetailsPage() {
 
       <div className="flex flex-col gap-4 rounded-2xl bg-white p-5 shadow-soft">
         <h2 className="font-semibold text-ink-900">
-          {diningMethod === "DINE_IN" && "Dine-in Details"}
-          {diningMethod === "PICKUP" && "Pickup Details"}
-          {diningMethod === "DELIVERY" && "Delivery Details"}
+          {diningMethod === "DINE_IN" && t.dineInDetails}
+          {diningMethod === "PICKUP" && t.pickupDetails}
+          {diningMethod === "DELIVERY" && t.deliveryDetails}
         </h2>
 
         {diningMethod === "DINE_IN" && (
-          <FieldWrapper label="Table Number" required error={errors.tableNumber}>
+          <FieldWrapper label={t.tableNumber} required error={errors.tableNumber}>
             <Input
-              placeholder="e.g. A5"
+              placeholder={t.tableNumberPlaceholder}
               value={customer.tableNumber}
               onChange={(e) => setCustomerField("tableNumber", e.target.value)}
               error={!!errors.tableNumber}
@@ -120,10 +123,10 @@ export default function CheckoutDetailsPage() {
 
         {needsSlot && (
           <FieldWrapper
-            label={diningMethod === "DELIVERY" ? "Delivery Time" : "Pickup Time"}
+            label={diningMethod === "DELIVERY" ? t.deliveryTime : t.pickupTime}
             required
             error={errors.timeSlotId}
-            hint={loadingSlots ? "Loading time slots..." : undefined}
+            hint={loadingSlots ? t.loadingTimeSlots : undefined}
           >
             <Select
               value={customer.timeSlotId}
@@ -138,7 +141,7 @@ export default function CheckoutDetailsPage() {
               error={!!errors.timeSlotId}
               disabled={loadingSlots}
             >
-              <option value="">Select a time slot</option>
+              <option value="">{t.selectTimeSlot}</option>
               {slots.map((slot) => (
                 <option key={slot.id} value={slot.id}>
                   {slot.label}
@@ -146,26 +149,24 @@ export default function CheckoutDetailsPage() {
               ))}
             </Select>
             {!loadingSlots && slots.length === 0 && (
-              <p className="text-xs text-danger-500">
-                No time slots are available for this location right now
-              </p>
+              <p className="text-xs text-danger-500">{t.noTimeSlots}</p>
             )}
           </FieldWrapper>
         )}
 
-        <FieldWrapper label="Name" required error={errors.name}>
+        <FieldWrapper label={t.name} required error={errors.name}>
           <Input
-            placeholder="Your full name"
+            placeholder={t.namePlaceholder}
             value={customer.name}
             onChange={(e) => setCustomerField("name", e.target.value)}
             error={!!errors.name}
           />
         </FieldWrapper>
 
-        <FieldWrapper label="Phone Number" required error={errors.phone}>
+        <FieldWrapper label={t.phone} required error={errors.phone}>
           <Input
             type="tel"
-            placeholder="Your phone number"
+            placeholder={t.phonePlaceholder}
             value={customer.phone}
             onChange={(e) => setCustomerField("phone", e.target.value)}
             error={!!errors.phone}
@@ -173,9 +174,9 @@ export default function CheckoutDetailsPage() {
         </FieldWrapper>
 
         {diningMethod === "DELIVERY" && (
-          <FieldWrapper label="Delivery Address" required error={errors.address}>
+          <FieldWrapper label={t.deliveryAddress} required error={errors.address}>
             <Input
-              placeholder="Full delivery address"
+              placeholder={t.deliveryAddressPlaceholder}
               value={customer.address}
               onChange={(e) => setCustomerField("address", e.target.value)}
               error={!!errors.address}
@@ -183,9 +184,9 @@ export default function CheckoutDetailsPage() {
           </FieldWrapper>
         )}
 
-        <FieldWrapper label="Notes" hint="Any special requests? Let us know (optional)">
+        <FieldWrapper label={t.notes} hint={t.notesHint}>
           <Textarea
-            placeholder="e.g. no spice, need utensils..."
+            placeholder={t.notesPlaceholder}
             value={customer.notes}
             onChange={(e) => setCustomerField("notes", e.target.value)}
           />
@@ -194,10 +195,10 @@ export default function CheckoutDetailsPage() {
 
       <div className="flex gap-3">
         <Button variant="outline" size="lg" onClick={() => router.push(`/${tenantSlug}/menu`)}>
-          Back to Menu
+          {t.backToMenu}
         </Button>
         <Button fullWidth size="lg" onClick={handleNext}>
-          Next: Payment
+          {t.nextPayment}
         </Button>
       </div>
     </div>

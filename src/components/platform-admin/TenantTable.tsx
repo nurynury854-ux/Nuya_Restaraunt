@@ -3,6 +3,9 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Search, ExternalLink, Trash2, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
+import { useDictionary } from "@/components/i18n/LocaleProvider";
+import { formatMessage } from "@/lib/i18n/format";
+import type { Dictionary } from "@/lib/i18n/getDictionary";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -21,6 +24,9 @@ interface PlatformTenant {
 }
 
 export function TenantTable() {
+  const { dict, locale } = useDictionary();
+  const t = dict.platformAdmin.table;
+  const dateLocale = locale === "zh" ? "zh-TW" : "en-US";
   const [tenants, setTenants] = useState<PlatformTenant[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -51,11 +57,11 @@ export function TenantTable() {
       setPageSize(data.pageSize);
     } catch {
       if (requestId !== requestIdRef.current) return;
-      setError("Couldn't load tenants. Please try again.");
+      setError(t.loadError);
     } finally {
       if (requestId === requestIdRef.current) setLoading(false);
     }
-  }, []);
+  }, [t.loadError]);
 
   // Debounced search: settles 350ms after typing stops, always resetting
   // back to page 1. The setTimeout defers the state updates to their own
@@ -95,7 +101,7 @@ export function TenantTable() {
         prev.map((t) => (t.id === tenant.id ? { ...t, isActive: !t.isActive } : t))
       );
     } catch {
-      setError("Couldn't update that tenant. Please try again.");
+      setError(t.toggleError);
     } finally {
       setPendingToggleId(null);
     }
@@ -111,7 +117,7 @@ export function TenantTable() {
       setDeleteTarget(null);
       load(query, page);
     } catch {
-      setError("Couldn't delete that tenant. Please try again.");
+      setError(t.deleteError);
     }
   }
 
@@ -124,12 +130,14 @@ export function TenantTable() {
           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ink-300" />
           <Input
             className="pl-9"
-            placeholder="Search by name or URL..."
+            placeholder={t.searchPlaceholder}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
         </div>
-        <span className="shrink-0 text-sm text-ink-400">{total} tenant{total === 1 ? "" : "s"}</span>
+        <span className="shrink-0 text-sm text-ink-400">
+          {formatMessage(t.tenantsCount, { total, plural: total === 1 ? "" : "s" })}
+        </span>
       </div>
 
       {error && <p className="text-sm text-danger-500">{error}</p>}
@@ -139,12 +147,12 @@ export function TenantTable() {
           <table className="w-full text-left text-sm">
             <thead>
               <tr className="border-b border-ink-100 text-xs text-ink-400">
-                <th className="px-4 py-3 font-medium">Business</th>
-                <th className="px-4 py-3 font-medium">Owner</th>
-                <th className="px-4 py-3 font-medium">Locations</th>
-                <th className="px-4 py-3 font-medium">Orders</th>
-                <th className="px-4 py-3 font-medium">Created</th>
-                <th className="px-4 py-3 font-medium">Active</th>
+                <th className="px-4 py-3 font-medium">{t.business}</th>
+                <th className="px-4 py-3 font-medium">{t.owner}</th>
+                <th className="px-4 py-3 font-medium">{t.locations}</th>
+                <th className="px-4 py-3 font-medium">{t.orders}</th>
+                <th className="px-4 py-3 font-medium">{t.created}</th>
+                <th className="px-4 py-3 font-medium">{t.active}</th>
                 <th className="px-4 py-3 font-medium" />
               </tr>
             </thead>
@@ -167,7 +175,7 @@ export function TenantTable() {
                   <td className="px-4 py-3 text-ink-600">{t.branchCount}</td>
                   <td className="px-4 py-3 text-ink-600">{t.orderCount}</td>
                   <td className="px-4 py-3 text-ink-500">
-                    {new Date(t.createdAt).toLocaleDateString()}
+                    {new Date(t.createdAt).toLocaleDateString(dateLocale)}
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
@@ -176,14 +184,14 @@ export function TenantTable() {
                         disabled={pendingToggleId === t.id}
                         onChange={() => toggleActive(t)}
                       />
-                      {!t.isActive && <Badge tone="danger">Suspended</Badge>}
+                      {!t.isActive && <Badge tone="danger">{dict.platformAdmin.table.suspended}</Badge>}
                     </div>
                   </td>
                   <td className="px-4 py-3 text-right">
                     <button
                       onClick={() => setDeleteTarget(t)}
                       className="inline-flex size-8 cursor-pointer items-center justify-center rounded-lg text-ink-400 transition-colors hover:bg-danger-500/10 hover:text-danger-600"
-                      aria-label={`Delete ${t.businessName}`}
+                      aria-label={formatMessage(dict.platformAdmin.table.deleteAria, { name: t.businessName })}
                     >
                       <Trash2 className="size-4" />
                     </button>
@@ -193,7 +201,7 @@ export function TenantTable() {
               {!loading && tenants.length === 0 && (
                 <tr>
                   <td colSpan={7} className="px-4 py-10 text-center text-ink-400">
-                    No tenants found.
+                    {t.noTenants}
                   </td>
                 </tr>
               )}
@@ -203,7 +211,7 @@ export function TenantTable() {
         {loading && (
           <div className="flex items-center justify-center gap-2 py-6 text-sm text-ink-400">
             <Loader2 className="size-4 animate-spin" />
-            Loading...
+            {t.loading}
           </div>
         )}
       </Card>
@@ -218,7 +226,7 @@ export function TenantTable() {
             <ChevronLeft className="size-4" />
           </button>
           <span className="text-sm text-ink-500">
-            Page {page} of {totalPages}
+            {formatMessage(t.pageOf, { page, totalPages })}
           </span>
           <button
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
@@ -236,6 +244,7 @@ export function TenantTable() {
             tenant={deleteTarget}
             onCancel={() => setDeleteTarget(null)}
             onConfirm={confirmDelete}
+            dict={dict}
           />
         )}
       </AnimatePresence>
@@ -247,11 +256,14 @@ function DeleteConfirmModal({
   tenant,
   onCancel,
   onConfirm,
+  dict,
 }: {
   tenant: PlatformTenant;
   onCancel: () => void;
   onConfirm: () => void;
+  dict: Dictionary;
 }) {
+  const t = dict.platformAdmin.table.deleteModal;
   const [typed, setTyped] = useState("");
   const [deleting, setDeleting] = useState(false);
   const canDelete = typed.trim() === tenant.slug;
@@ -279,14 +291,13 @@ function DeleteConfirmModal({
       >
         <Card className="p-5">
           <h3 className="font-[family-name:var(--font-display)] text-lg font-bold text-danger-600">
-            Delete {tenant.businessName}?
+            {formatMessage(t.title, { name: tenant.businessName })}
           </h3>
-          <p className="mt-2 text-sm text-ink-500">
-            This permanently deletes this tenant&apos;s locations, menu, time slots, orders,
-            and admin accounts. This cannot be undone.
-          </p>
+          <p className="mt-2 text-sm text-ink-500">{t.description}</p>
           <p className="mt-3 text-sm text-ink-700">
-            Type <span className="font-mono font-semibold">{tenant.slug}</span> to confirm.
+            {t.typeToConfirmPrefix}
+            <span className="font-mono font-semibold">{tenant.slug}</span>
+            {t.typeToConfirmSuffix}
           </p>
           <Input
             className="mt-2"
@@ -296,7 +307,7 @@ function DeleteConfirmModal({
           />
           <div className="mt-4 flex justify-end gap-2">
             <Button variant="ghost" onClick={onCancel}>
-              Cancel
+              {t.cancel}
             </Button>
             <Button
               variant="danger"
@@ -304,7 +315,7 @@ function DeleteConfirmModal({
               loading={deleting}
               onClick={handleConfirm}
             >
-              Delete permanently
+              {t.deletePermanently}
             </Button>
           </div>
         </Card>

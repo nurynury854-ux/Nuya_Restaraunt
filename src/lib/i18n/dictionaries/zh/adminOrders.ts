@@ -1,0 +1,41 @@
+import type { adminOrders as enAdminOrders } from "@/lib/i18n/dictionaries/en/adminOrders";
+
+export const adminOrders: typeof enAdminOrders = {
+  pendingTitle: "處理中訂單",
+  completedTitle: "已完成訂單",
+  historyTitle: "訂單歷史紀錄",
+  kitchenDisplay: "廚房顯示螢幕",
+  card: {
+    placed: "訂購時間 {time}",
+    completedAt: "・完成時間 {time}",
+    cancelledAt: "・取消時間 {time}",
+    table: "桌號：{tableNumber}",
+    time: "時段：{label}",
+    deliveryTo: "外送地址：{address}",
+    notes: "備註：{notes}",
+    printAriaLabel: "列印訂單 {orderNo} 的出餐單",
+    cancelOrder: "取消訂單",
+    markComplete: "標記為已完成",
+  },
+  board: {
+    noPendingOrders: "目前沒有處理中的{method}訂單",
+    noCompletedOrders: "目前沒有已完成的{method}訂單",
+  },
+  history: {
+    orderNo: "訂單編號",
+    orderNoPlaceholder: "例如：0725-001",
+    customerPhone: "顧客電話",
+    phonePlaceholder: "搜尋電話號碼",
+    status: "訂單狀態",
+    allStatuses: "所有狀態",
+    fromDate: "起始日期",
+    toDate: "結束日期",
+    diningMethod: "用餐方式",
+    allMethods: "所有方式",
+    loadError: "無法載入訂單，請再試一次。",
+    resultsFound: "共找到 {total} 筆訂單",
+    noResults: "沒有符合篩選條件的訂單。",
+    loading: "載入中...",
+    pageOf: "第 {page} 頁，共 {totalPages} 頁",
+  },
+};

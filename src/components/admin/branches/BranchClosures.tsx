@@ -3,17 +3,18 @@
 import { useEffect, useState } from "react";
 import { CalendarOff, Plus, X } from "lucide-react";
 import type { SerializedBranchClosure } from "@/lib/types";
+import { useDictionary } from "@/components/i18n/LocaleProvider";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input, FieldWrapper } from "@/components/ui/Field";
 
-function formatClosureDate(iso: string): string {
+function formatClosureDate(iso: string, locale: string): string {
   // Split on the date part directly rather than `new Date(iso)` — the
   // stored value is local midnight, and parsing an ISO string with no
   // timezone offset as UTC can roll it back a day in a negative-UTC-offset
   // browser.
   const [y, m, d] = iso.slice(0, 10).split("-").map(Number);
-  return new Date(y, m - 1, d).toLocaleDateString("en-US", {
+  return new Date(y, m - 1, d).toLocaleDateString(locale, {
     weekday: "short",
     month: "short",
     day: "numeric",
@@ -22,6 +23,9 @@ function formatClosureDate(iso: string): string {
 }
 
 export function BranchClosures({ branchId }: { branchId: string }) {
+  const { locale, dict } = useDictionary();
+  const t = dict.adminSettings.closures;
+  const dateLocale = locale === "zh" ? "zh-TW" : "en-US";
   const [closures, setClosures] = useState<SerializedBranchClosure[]>([]);
   const [loading, setLoading] = useState(true);
   const [date, setDate] = useState("");
@@ -51,7 +55,7 @@ export function BranchClosures({ branchId }: { branchId: string }) {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "Couldn't add that date");
+        setError(data.error ?? t.addError);
         return;
       }
       setDate("");
@@ -82,15 +86,12 @@ export function BranchClosures({ branchId }: { branchId: string }) {
     <Card className="flex max-w-lg flex-col gap-3.5 p-5">
       <div className="flex items-center gap-2">
         <CalendarOff className="size-4 text-brand-500" />
-        <h2 className="font-semibold text-ink-900">Closed Dates</h2>
+        <h2 className="font-semibold text-ink-900">{t.heading}</h2>
       </div>
-      <p className="text-xs text-ink-400">
-        Mark specific dates as closed (holidays, one-off closures) without touching your regular
-        time slots. Customers can&apos;t place orders for this location on a closed date.
-      </p>
+      <p className="text-xs text-ink-400">{t.description}</p>
 
       {!loading && upcoming.length === 0 && (
-        <p className="text-sm text-ink-400">No upcoming closed dates.</p>
+        <p className="text-sm text-ink-400">{t.noUpcoming}</p>
       )}
 
       {upcoming.length > 0 && (
@@ -101,14 +102,14 @@ export function BranchClosures({ branchId }: { branchId: string }) {
               className="flex items-center justify-between gap-2 rounded-xl bg-cream-50 px-3.5 py-2 text-sm"
             >
               <div className="min-w-0">
-                <p className="font-medium text-ink-900">{formatClosureDate(c.date)}</p>
+                <p className="font-medium text-ink-900">{formatClosureDate(c.date, dateLocale)}</p>
                 {c.reason && <p className="truncate text-xs text-ink-500">{c.reason}</p>}
               </div>
               <button
                 onClick={() => removeClosure(c.id)}
                 disabled={busy}
                 className="shrink-0 cursor-pointer text-ink-300 transition-colors hover:text-danger-500"
-                aria-label="Remove closed date"
+                aria-label={t.removeAria}
               >
                 <X className="size-4" />
               </button>
@@ -119,12 +120,12 @@ export function BranchClosures({ branchId }: { branchId: string }) {
 
       <div className="flex flex-col gap-2.5 rounded-xl border border-dashed border-ink-200 p-3.5">
         <div className="flex flex-col gap-2.5 sm:flex-row">
-          <FieldWrapper label="Date">
+          <FieldWrapper label={t.date}>
             <Input type="date" value={date} min={todayStr} onChange={(e) => setDate(e.target.value)} />
           </FieldWrapper>
-          <FieldWrapper label="Reason (optional)">
+          <FieldWrapper label={t.reasonOptional}>
             <Input
-              placeholder="e.g. New Year's Day"
+              placeholder={t.reasonPlaceholder}
               value={reason}
               onChange={(e) => setReason(e.target.value)}
             />
@@ -133,7 +134,7 @@ export function BranchClosures({ branchId }: { branchId: string }) {
         {error && <p className="text-xs text-danger-500">{error}</p>}
         <Button size="sm" loading={busy} disabled={!date} onClick={addClosure} className="self-start">
           <Plus className="size-4" />
-          Add Closed Date
+          {t.addClosedDate}
         </Button>
       </div>
     </Card>

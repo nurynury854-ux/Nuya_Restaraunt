@@ -3,6 +3,8 @@ import { ShoppingBag, DollarSign, Receipt, Trophy, ChevronLeft, ChevronRight } f
 import { prisma } from "@/lib/prisma";
 import { bucketOrdersByMonth, parseMonthParam, monthParamOf } from "@/lib/analytics";
 import { getTenantBySlug } from "@/lib/tenant";
+import { getServerDictionary } from "@/lib/i18n/getServerDictionary";
+import { formatMessage } from "@/lib/i18n/format";
 import { Card } from "@/components/ui/Card";
 import { MonthlyBarChart } from "@/components/admin/dashboard/MonthlyBarChart";
 import { OnboardingChecklist, type OnboardingStep } from "@/components/admin/dashboard/OnboardingChecklist";
@@ -22,7 +24,11 @@ export default async function DashboardPage({
 }) {
   const { tenantSlug, branchId } = await params;
   const { month: monthParam } = await searchParams;
-  const tenant = (await getTenantBySlug(tenantSlug))!;
+  const [tenant, { locale, dict }] = await Promise.all([
+    getTenantBySlug(tenantSlug),
+    getServerDictionary(),
+  ]);
+  const t = dict.adminDashboard;
 
   const now = new Date();
   const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -37,7 +43,10 @@ export default async function DashboardPage({
   const nextDate = new Date(year, month, 1);
   const prevHref = `?month=${monthParamOf(prevDate.getFullYear(), prevDate.getMonth() + 1)}`;
   const nextHref = `?month=${monthParamOf(nextDate.getFullYear(), nextDate.getMonth() + 1)}`;
-  const monthLabel = monthStart.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+  const monthLabel = monthStart.toLocaleDateString(locale === "zh" ? "zh-TW" : "en-US", {
+    month: "long",
+    year: "numeric",
+  });
 
   const [todayCount, todayRevenueAgg, monthOrders, branch, categoryCount, itemCount] =
     await Promise.all([
@@ -56,36 +65,36 @@ export default async function DashboardPage({
         where: { id: branchId },
         select: { address: true, phone: true, hours: true },
       }),
-      prisma.menuCategory.count({ where: { tenantId: tenant.id } }),
-      prisma.menuItem.count({ where: { tenantId: tenant.id } }),
+      prisma.menuCategory.count({ where: { tenantId: tenant!.id } }),
+      prisma.menuItem.count({ where: { tenantId: tenant!.id } }),
     ]);
 
   const onboardingSteps: OnboardingStep[] = [
     {
       key: "logo",
-      label: "Upload your logo",
-      description: "Shows in your admin panel and re-themes your customer site",
-      done: !!tenant.logoUrl,
+      label: t.onboarding.logoLabel,
+      description: t.onboarding.logoDescription,
+      done: !!tenant!.logoUrl,
       href: `/${tenantSlug}/admin/settings`,
     },
     {
       key: "category",
-      label: "Add a menu category",
-      description: 'e.g. "Appetizers", "Drinks"',
+      label: t.onboarding.categoryLabel,
+      description: t.onboarding.categoryDescription,
       done: categoryCount > 0,
       href: `/${tenantSlug}/admin/${branchId}/menu`,
     },
     {
       key: "item",
-      label: "Add a menu item",
-      description: "Customers can't order from an empty menu",
+      label: t.onboarding.itemLabel,
+      description: t.onboarding.itemDescription,
       done: itemCount > 0,
       href: `/${tenantSlug}/admin/${branchId}/menu`,
     },
     {
       key: "hours",
-      label: "Set your location details",
-      description: "Address, phone, and hours — shown to customers before they order",
+      label: t.onboarding.hoursLabel,
+      description: t.onboarding.hoursDescription,
       done:
         !!branch &&
         branch.address !== PLACEHOLDER_ADDRESS &&
@@ -117,16 +126,16 @@ export default async function DashboardPage({
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6">
       <h1 className="font-[family-name:var(--font-display)] text-2xl font-bold text-ink-900">
-        Dashboard
+        {t.heading}
       </h1>
 
       {!onboardingComplete && <OnboardingChecklist steps={onboardingSteps} />}
 
       <div className="grid grid-cols-2 gap-4">
-        <StatCard icon={ShoppingBag} label="Today's Orders" value={String(todayCount)} />
+        <StatCard icon={ShoppingBag} label={t.todaysOrders} value={String(todayCount)} />
         <StatCard
           icon={DollarSign}
-          label="Today's Revenue"
+          label={t.todaysRevenue}
           value={`$${todayRevenueAgg._sum.totalAmount ?? 0}`}
         />
       </div>
@@ -140,7 +149,7 @@ export default async function DashboardPage({
             <Link
               href={prevHref}
               className="inline-flex size-8 items-center justify-center rounded-lg text-ink-500 transition-colors hover:bg-ink-100"
-              aria-label="Previous month"
+              aria-label={t.previousMonth}
             >
               <ChevronLeft className="size-4" />
             </Link>
@@ -152,7 +161,7 @@ export default async function DashboardPage({
               <Link
                 href={nextHref}
                 className="inline-flex size-8 items-center justify-center rounded-lg text-ink-500 transition-colors hover:bg-ink-100"
-                aria-label="Next month"
+                aria-label={t.nextMonth}
               >
                 <ChevronRight className="size-4" />
               </Link>
@@ -161,9 +170,9 @@ export default async function DashboardPage({
         </div>
 
         <div className="mb-5 grid grid-cols-3 gap-3">
-          <MonthStat icon={ShoppingBag} label="Orders" value={String(monthOrders.length)} />
-          <MonthStat icon={DollarSign} label="Revenue" value={`$${monthRevenue}`} />
-          <MonthStat icon={Receipt} label="Avg. Order" value={`$${avgOrderValue}`} />
+          <MonthStat icon={ShoppingBag} label={t.orders} value={String(monthOrders.length)} />
+          <MonthStat icon={DollarSign} label={t.revenue} value={`$${monthRevenue}`} />
+          <MonthStat icon={Receipt} label={t.avgOrder} value={`$${avgOrderValue}`} />
         </div>
 
         <MonthlyBarChart buckets={buckets} />
@@ -172,11 +181,11 @@ export default async function DashboardPage({
       <Card className="p-5">
         <h2 className="mb-4 flex items-center gap-2 font-[family-name:var(--font-display)] text-lg font-bold text-ink-900">
           <Trophy className="size-4 text-gold-600" />
-          Best Sellers
+          {t.bestSellers}
           <span className="text-sm font-normal text-ink-400">({monthLabel})</span>
         </h2>
         {bestSellers.length === 0 ? (
-          <p className="text-sm text-ink-400">No completed orders this month.</p>
+          <p className="text-sm text-ink-400">{t.noCompletedOrders}</p>
         ) : (
           <div className="flex flex-col gap-3">
             {bestSellers.map((item, i) => (
@@ -188,7 +197,9 @@ export default async function DashboardPage({
                   <span className="text-sm font-medium text-ink-900">{item.nameSnapshot}</span>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm font-semibold text-ink-900">{item._sum.quantity} sold</p>
+                  <p className="text-sm font-semibold text-ink-900">
+                    {formatMessage(t.sold, { count: item._sum.quantity ?? 0 })}
+                  </p>
                   <p className="text-xs text-ink-400">${item._sum.subtotal}</p>
                 </div>
               </div>

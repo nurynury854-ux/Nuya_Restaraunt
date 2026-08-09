@@ -5,8 +5,10 @@ import { useRouter } from "next/navigation";
 import { ChevronLeft, CalendarOff } from "lucide-react";
 import type { MenuCategory } from "@/generated/prisma/client";
 import { useOrderStore } from "@/lib/store/orderStore";
-import { DINING_METHOD_LABEL } from "@/lib/constants";
 import { usePolling } from "@/lib/hooks/usePolling";
+import { useDictionary } from "@/components/i18n/LocaleProvider";
+import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
+import { formatMessage } from "@/lib/i18n/format";
 import { MenuItemRow, type MenuItemWithModifiers } from "@/components/customer/MenuItemRow";
 import { CartWidget } from "@/components/customer/cart/CartWidget";
 
@@ -25,6 +27,8 @@ export function MenuBrowser({
   const branchName = useOrderStore((s) => s.branchName);
   const diningMethod = useOrderStore((s) => s.diningMethod);
   const branchId = useOrderStore((s) => s.branchId);
+  const { dict } = useDictionary();
+  const t = dict.customer.menu;
 
   const [categories, setCategories] = useState(initialCategories);
   const [ready, setReady] = useState(false);
@@ -101,7 +105,7 @@ export function MenuBrowser({
     }
   }
 
-  const methodLabel = diningMethod ? DINING_METHOD_LABEL[diningMethod] : "";
+  const methodLabel = diningMethod ? dict.constants.diningMethod[diningMethod] : "";
 
   const totalItemCount = useMemo(
     () => categories.reduce((sum, c) => sum + c.items.length, 0),
@@ -109,7 +113,7 @@ export function MenuBrowser({
   );
 
   if (!ready) {
-    return <div className="flex flex-1 items-center justify-center text-ink-400">Loading...</div>;
+    return <div className="flex flex-1 items-center justify-center text-ink-400">{dict.common.loading}</div>;
   }
 
   return (
@@ -121,20 +125,22 @@ export function MenuBrowser({
             className="flex cursor-pointer items-center gap-1 text-sm text-ink-500 transition-colors hover:text-brand-600"
           >
             <ChevronLeft className="size-4" />
-            Change
+            {t.change}
           </button>
           <div className="text-center">
             <p className="text-sm font-semibold text-ink-900">{branchName}</p>
             <p className="text-xs text-ink-500">{methodLabel}</p>
           </div>
-          <div className="w-16" />
+          <LanguageSwitcher />
         </div>
       </header>
 
       {closedToday && (
         <div className="flex items-center justify-center gap-2 bg-danger-500/10 px-4 py-2.5 text-center text-sm font-medium text-danger-600">
           <CalendarOff className="size-4 shrink-0" />
-          {closedReason ? `Closed today — ${closedReason}` : "This location is closed today"}
+          {closedReason
+            ? formatMessage(t.closedTodayWithReason, { reason: closedReason })
+            : t.closedTodayGeneric}
         </div>
       )}
 
@@ -177,7 +183,7 @@ export function MenuBrowser({
 
         <main className="min-w-0 flex-1">
           {totalItemCount === 0 && (
-            <p className="py-16 text-center text-ink-400">No items are available right now</p>
+            <p className="py-16 text-center text-ink-400">{t.noItemsAvailable}</p>
           )}
           <div className="flex flex-col gap-10 pb-32 lg:pb-6">
             {categories.map((cat) => (

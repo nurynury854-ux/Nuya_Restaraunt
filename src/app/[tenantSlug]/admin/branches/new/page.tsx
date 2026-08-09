@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import { getAdminSession } from "@/lib/adminAuth";
 import { getTenantBySlug } from "@/lib/tenant";
+import { getServerDictionary } from "@/lib/i18n/getServerDictionary";
 import { AdminTopBar } from "@/components/admin/AdminTopBar";
 import { NewBranchForm } from "@/components/admin/branches/NewBranchForm";
 
@@ -13,7 +14,12 @@ export default async function NewBranchPage({
   params: Promise<{ tenantSlug: string }>;
 }) {
   const { tenantSlug } = await params;
-  const [tenant, session] = await Promise.all([getTenantBySlug(tenantSlug), getAdminSession()]);
+  const [tenant, session, { dict }] = await Promise.all([
+    getTenantBySlug(tenantSlug),
+    getAdminSession(),
+    getServerDictionary(),
+  ]);
+  const t = dict.adminSettings.newBranch;
 
   return (
     <div className="flex flex-1 flex-col">
@@ -29,10 +35,10 @@ export default async function NewBranchPage({
           className="mb-4 flex w-fit items-center gap-1 text-sm text-ink-500 hover:text-brand-600"
         >
           <ChevronLeft className="size-4" />
-          Locations
+          {t.locations}
         </Link>
         <h1 className="mb-5 font-[family-name:var(--font-display)] text-2xl font-bold text-ink-900">
-          Add a Location
+          {t.heading}
         </h1>
         <NewBranchForm tenantSlug={tenantSlug} />
       </div>

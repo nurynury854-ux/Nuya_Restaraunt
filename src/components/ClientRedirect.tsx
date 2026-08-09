@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useDictionary } from "@/components/i18n/LocaleProvider";
 
 /**
  * Navigates to `href` via a plain client-side router call, instead of a
@@ -17,10 +18,13 @@ import { useRouter } from "next/navigation";
  */
 export function ClientRedirect({ href }: { href: string }) {
   const router = useRouter();
+  const { dict } = useDictionary();
 
   useEffect(() => {
     router.replace(href);
   }, [href, router]);
 
-  return <div className="flex flex-1 items-center justify-center text-ink-400">Loading...</div>;
+  return (
+    <div className="flex flex-1 items-center justify-center text-ink-400">{dict.common.loading}</div>
+  );
 }

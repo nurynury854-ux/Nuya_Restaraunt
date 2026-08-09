@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Bell, BellOff, PartyPopper } from "lucide-react";
 import { usePolling } from "@/lib/hooks/usePolling";
+import { useDictionary } from "@/components/i18n/LocaleProvider";
+import { formatMessage } from "@/lib/i18n/format";
 import type { SerializedOrder } from "@/lib/types";
 
 const POLL_INTERVAL_MS = 5000;
@@ -24,6 +26,8 @@ function playBeep(ctx: AudioContext) {
 }
 
 export function NewOrderNotifier({ branchId }: { branchId: string }) {
+  const { dict } = useDictionary();
+  const t = dict.adminChrome.notifier;
   const [toasts, setToasts] = useState<SerializedOrder[]>([]);
   const [soundOn, setSoundOn] = useState(true);
   const soundOnRef = useRef(soundOn);
@@ -96,7 +100,7 @@ export function NewOrderNotifier({ branchId }: { branchId: string }) {
         className="flex items-center gap-1.5 rounded-full border border-ink-100 bg-white px-3 py-1.5 text-xs text-ink-500 shadow-soft transition-colors hover:border-brand-300"
       >
         {soundOn ? <Bell className="size-3.5 text-brand-500" /> : <BellOff className="size-3.5" />}
-        New order sound: {soundOn ? "On" : "Off"}
+        {soundOn ? t.soundOn : t.soundOff}
       </button>
 
       <AnimatePresence>
@@ -111,7 +115,7 @@ export function NewOrderNotifier({ branchId }: { branchId: string }) {
           >
             <PartyPopper className="mt-0.5 size-5 shrink-0 text-gold-400" />
             <div className="min-w-0">
-              <p className="text-sm font-semibold">New order! {order.orderNo}</p>
+              <p className="text-sm font-semibold">{formatMessage(t.newOrder, { orderNo: order.orderNo })}</p>
               <p className="truncate text-xs text-white/70">
                 {order.customerName} · ${order.totalAmount}
               </p>

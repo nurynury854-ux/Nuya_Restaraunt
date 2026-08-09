@@ -5,12 +5,15 @@ import { useRouter } from "next/navigation";
 import { Plus, Pencil, Trash2, X, Check, Upload, UtensilsCrossed, ListPlus, CheckCircle2 } from "lucide-react";
 import type { SerializedMenuCategory, SerializedMenuItem } from "@/lib/types";
 import { usePolling } from "@/lib/hooks/usePolling";
+import { useDictionary } from "@/components/i18n/LocaleProvider";
+import { formatMessage } from "@/lib/i18n/format";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input, Textarea, FieldWrapper } from "@/components/ui/Field";
 import { Badge } from "@/components/ui/Badge";
 import { ToggleSwitch } from "@/components/ui/ToggleSwitch";
 import { ModifierGroupsEditor } from "@/components/admin/menu/ModifierGroupsEditor";
+import type { Dictionary } from "@/lib/i18n/getDictionary";
 
 interface EditingItem {
   id: string;
@@ -23,13 +26,13 @@ interface EditingItem {
 
 const POLL_INTERVAL_MS = 10000;
 
-async function uploadImage(file: File): Promise<string> {
+async function uploadImage(file: File, uploadFailedMessage: string): Promise<string> {
   const form = new FormData();
   form.append("file", file);
   form.append("kind", "items");
   const res = await fetch("/api/uploads", { method: "POST", body: form });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.error ?? "Upload failed");
+  if (!res.ok) throw new Error(data.error ?? uploadFailedMessage);
   return data.url as string;
 }
 
@@ -39,6 +42,8 @@ export function MenuManager({
   initialCategories: SerializedMenuCategory[];
 }) {
   const router = useRouter();
+  const { dict } = useDictionary();
+  const t = dict.adminMenu;
   const [categories, setCategories] = useState(initialCategories);
   const [selectedCategoryId, setSelectedCategoryId] = useState(
     initialCategories[0]?.id ?? ""
@@ -105,7 +110,7 @@ export function MenuManager({
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "Couldn't create category");
+        setError(data.error ?? t.createCategoryError);
         return;
       }
       setNewCategoryName("");
@@ -119,14 +124,14 @@ export function MenuManager({
   }
 
   async function deleteCategory(id: string) {
-    if (!confirm("Delete this category?")) return;
+    if (!confirm(t.deleteCategoryConfirm)) return;
     setBusy(true);
     setError("");
     try {
       const res = await fetch(`/api/categories/${id}`, { method: "DELETE" });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "Couldn't delete category");
+        setError(data.error ?? t.deleteCategoryError);
         return;
       }
       if (selectedCategoryId === id) setSelectedCategoryId("");
@@ -139,12 +144,12 @@ export function MenuManager({
   async function createItem() {
     if (!newItem.name.trim() || !selectedCategory) return;
     if (uploadingNew) {
-      setError("Please wait for the photo to finish uploading first");
+      setError(t.photoUploadingWait);
       return;
     }
     const price = Number(newItem.price);
     if (Number.isNaN(price) || price < 0) {
-      setError("Please enter a valid price");
+      setError(t.invalidPrice);
       return;
     }
     setBusy(true);
@@ -164,7 +169,7 @@ export function MenuManager({
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "Couldn't add item");
+        setError(data.error ?? t.createItemError);
         return;
       }
       setNewItem({ name: "", price: "", description: "", imageUrl: "" });
@@ -180,10 +185,10 @@ export function MenuManager({
     setUploadingNew(true);
     setError("");
     try {
-      const url = await uploadImage(file);
+      const url = await uploadImage(file, t.uploadFailed);
       setNewItem((prev) => ({ ...prev, imageUrl: url }));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Upload failed");
+      setError(err instanceof Error ? err.message : t.uploadFailed);
     } finally {
       setUploadingNew(false);
       e.target.value = "";
@@ -207,10 +212,10 @@ export function MenuManager({
     setUploadingEdit(true);
     setError("");
     try {
-      const url = await uploadImage(file);
+      const url = await uploadImage(file, t.uploadFailed);
       setEditingItem((prev) => (prev ? { ...prev, imageUrl: url } : prev));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Upload failed");
+      setError(err instanceof Error ? err.message : t.uploadFailed);
     } finally {
       setUploadingEdit(false);
       e.target.value = "";
@@ -220,12 +225,12 @@ export function MenuManager({
   async function saveEdit() {
     if (!editingItem) return;
     if (uploadingEdit) {
-      setError("Please wait for the photo to finish uploading first");
+      setError(t.photoUploadingWait);
       return;
     }
     const price = Number(editingItem.price);
     if (Number.isNaN(price) || price < 0) {
-      setError("Please enter a valid price");
+      setError(t.invalidPrice);
       return;
     }
     setBusy(true);
@@ -244,7 +249,7 @@ export function MenuManager({
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "Couldn't update item");
+        setError(data.error ?? t.updateItemError);
         return;
       }
       setEditingItem(null);
@@ -255,7 +260,7 @@ export function MenuManager({
   }
 
   async function deleteItem(id: string) {
-    if (!confirm("Delete this item?")) return;
+    if (!confirm(t.deleteItemConfirm)) return;
     setBusy(true);
     setError("");
     try {
@@ -303,7 +308,7 @@ export function MenuManager({
             <button
               onClick={() => deleteCategory(cat.id)}
               className="absolute -right-1 -top-1 hidden size-5 cursor-pointer items-center justify-center rounded-full bg-danger-500 text-white group-hover:flex"
-              aria-label="Delete category"
+              aria-label={t.deleteCategoryAria}
             >
               <X className="size-3" />
             </button>
@@ -314,7 +319,7 @@ export function MenuManager({
           <div className="flex items-center gap-1.5">
             <input
               autoFocus
-              placeholder="Category name"
+              placeholder={t.categoryNamePlaceholder}
               value={newCategoryName}
               onChange={(e) => setNewCategoryName(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && createCategory()}
@@ -344,17 +349,19 @@ export function MenuManager({
             className="flex items-center gap-1.5 rounded-full border border-dashed border-ink-300 px-4 py-2 text-sm text-ink-500 hover:border-brand-400 hover:text-brand-600"
           >
             <Plus className="size-3.5" />
-            New Category
+            {t.newCategory}
           </button>
         )}
       </div>
 
       {selectedCategory && (
         <Card className="flex flex-col gap-3 p-5">
-          <h2 className="font-semibold text-ink-900">{selectedCategory.name} Items</h2>
+          <h2 className="font-semibold text-ink-900">
+            {formatMessage(t.itemsHeading, { name: selectedCategory.name })}
+          </h2>
 
           {selectedCategory.items.length === 0 && (
-            <p className="py-4 text-center text-sm text-ink-400">No items in this category yet</p>
+            <p className="py-4 text-center text-sm text-ink-400">{t.noItemsYet}</p>
           )}
 
           <ul className="flex flex-col gap-2.5">
@@ -367,6 +374,7 @@ export function MenuManager({
                         imageUrl={editingItem.imageUrl}
                         uploading={uploadingEdit}
                         onChange={handleEditItemImage}
+                        t={t}
                       />
                       <div className="flex flex-1 flex-col gap-2.5">
                         <div className="flex gap-2.5">
@@ -387,7 +395,7 @@ export function MenuManager({
                           />
                         </div>
                         <Textarea
-                          placeholder="Description (optional)"
+                          placeholder={t.descriptionOptional}
                           value={editingItem.description}
                           onChange={(e) =>
                             setEditingItem({ ...editingItem, description: e.target.value })
@@ -404,14 +412,14 @@ export function MenuManager({
                             setEditingItem({ ...editingItem, isAvailable: e.target.checked })
                           }
                         />
-                        Available
+                        {t.available}
                       </label>
                       <div className="flex gap-2">
                         <Button size="sm" variant="ghost" onClick={() => setEditingItem(null)}>
-                          Cancel
+                          {t.cancel}
                         </Button>
                         <Button size="sm" loading={busy} disabled={uploadingEdit} onClick={saveEdit}>
-                          Save
+                          {t.save}
                         </Button>
                       </div>
                     </div>
@@ -434,7 +442,7 @@ export function MenuManager({
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
                           <p className="truncate font-medium text-ink-900">{item.name}</p>
-                          {!item.isAvailable && <Badge tone="danger">Unavailable</Badge>}
+                          {!item.isAvailable && <Badge tone="danger">{t.unavailable}</Badge>}
                         </div>
                         {item.description && (
                           <p className="truncate text-xs text-ink-500">{item.description}</p>
@@ -455,7 +463,7 @@ export function MenuManager({
                         className={`relative flex size-8 cursor-pointer items-center justify-center rounded-lg hover:bg-ink-100 ${
                           expandedModifiersId === item.id ? "bg-ink-100 text-brand-600" : "text-ink-500"
                         }`}
-                        aria-label="Manage options (size, add-ons, etc.)"
+                        aria-label={t.manageOptionsAria}
                       >
                         <ListPlus className="size-3.5" />
                         {item.modifierGroups.length > 0 && (
@@ -487,22 +495,23 @@ export function MenuManager({
           </ul>
 
           <div className="mt-2 flex flex-col gap-3 rounded-xl border border-dashed border-ink-200 p-3.5">
-            <p className="text-sm font-medium text-ink-700">Add Item</p>
+            <p className="text-sm font-medium text-ink-700">{t.addItem}</p>
             <div className="flex gap-3">
               <ImagePicker
                 imageUrl={newItem.imageUrl}
                 uploading={uploadingNew}
                 onChange={handleNewItemImage}
+                t={t}
               />
               <div className="flex flex-1 flex-col gap-2.5">
                 <div className="flex flex-col gap-2.5 sm:flex-row">
-                  <FieldWrapper label="Name" required>
+                  <FieldWrapper label={t.name} required>
                     <Input
                       value={newItem.name}
                       onChange={(e) => setNewItem({ ...newItem, name: e.target.value })}
                     />
                   </FieldWrapper>
-                  <FieldWrapper label="Price" required>
+                  <FieldWrapper label={t.price} required>
                     <Input
                       type="number"
                       className="sm:w-28"
@@ -511,7 +520,7 @@ export function MenuManager({
                     />
                   </FieldWrapper>
                 </div>
-                <FieldWrapper label="Description (optional)">
+                <FieldWrapper label={t.descriptionOptional}>
                   <Input
                     value={newItem.description}
                     onChange={(e) => setNewItem({ ...newItem, description: e.target.value })}
@@ -527,7 +536,7 @@ export function MenuManager({
               className="self-start"
             >
               <Plus className="size-4" />
-              Add Item
+              {t.addItem}
             </Button>
           </div>
         </Card>
@@ -540,10 +549,12 @@ function ImagePicker({
   imageUrl,
   uploading,
   onChange,
+  t,
 }: {
   imageUrl: string;
   uploading: boolean;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  t: Dictionary["adminMenu"];
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   return (
@@ -568,7 +579,7 @@ function ImagePicker({
         )}
         {uploading && (
           <div className="absolute inset-0 flex items-center justify-center bg-white/70 text-xs text-ink-500">
-            Uploading...
+            {t.uploading}
           </div>
         )}
         {imageUrl && !uploading && (
@@ -577,9 +588,7 @@ function ImagePicker({
           </span>
         )}
       </button>
-      <p className="w-16 text-center text-[10px] leading-tight text-ink-400">
-        JPG, PNG, WebP, GIF · 5MB max
-      </p>
+      <p className="w-16 text-center text-[10px] leading-tight text-ink-400">{t.fileHint}</p>
     </div>
   );
 }

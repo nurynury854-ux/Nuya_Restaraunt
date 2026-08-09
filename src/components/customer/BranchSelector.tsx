@@ -6,7 +6,8 @@ import { MapPin, Phone, Clock, UtensilsCrossed, ShoppingBag, Bike } from "lucide
 import type { Branch } from "@/generated/prisma/client";
 import { Card } from "@/components/ui/Card";
 import { useOrderStore } from "@/lib/store/orderStore";
-import { DINING_METHODS, DINING_METHOD_LABEL, type DiningMethod } from "@/lib/constants";
+import { useDictionary } from "@/components/i18n/LocaleProvider";
+import { DINING_METHODS, type DiningMethod } from "@/lib/constants";
 
 const METHOD_ICON: Record<DiningMethod, typeof UtensilsCrossed> = {
   DINE_IN: UtensilsCrossed,
@@ -23,6 +24,8 @@ export function BranchSelector({
 }) {
   const router = useRouter();
   const selectBranch = useOrderStore((s) => s.selectBranch);
+  const { dict } = useDictionary();
+  const t = dict.customer.branchSelect;
 
   function handleSelect(branch: Branch, method: DiningMethod) {
     selectBranch(tenantSlug, branch.id, branch.name, method);
@@ -30,11 +33,7 @@ export function BranchSelector({
   }
 
   if (branches.length === 0) {
-    return (
-      <Card className="mt-10 p-8 text-center text-ink-500">
-        No locations have been set up yet. Please check back soon.
-      </Card>
-    );
+    return <Card className="mt-10 p-8 text-center text-ink-500">{t.noLocations}</Card>;
   }
 
   return (
@@ -67,9 +66,7 @@ export function BranchSelector({
               </div>
 
               <div className="mt-4 border-t border-ink-100 pt-4">
-                <p className="mb-2.5 text-xs font-medium text-ink-500">
-                  How would you like to order?
-                </p>
+                <p className="mb-2.5 text-xs font-medium text-ink-500">{t.howToOrder}</p>
                 <div className="grid grid-cols-3 gap-2">
                   {DINING_METHODS.map((method) => {
                     const Icon = METHOD_ICON[method];
@@ -83,7 +80,7 @@ export function BranchSelector({
                       >
                         <Icon className="size-5" />
                         <span className="text-xs font-medium">
-                          {DINING_METHOD_LABEL[method]}
+                          {dict.constants.diningMethod[method]}
                         </span>
                       </motion.button>
                     );

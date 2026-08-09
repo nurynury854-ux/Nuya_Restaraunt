@@ -12,6 +12,7 @@ import {
   Settings,
   ChevronLeft,
 } from "lucide-react";
+import { useDictionary } from "@/components/i18n/LocaleProvider";
 
 export function BranchNav({
   tenantSlug,
@@ -21,15 +22,17 @@ export function BranchNav({
   branchId: string;
 }) {
   const pathname = usePathname();
+  const { dict } = useDictionary();
+  const t = dict.adminChrome.nav;
   const base = `/${tenantSlug}/admin/${branchId}`;
 
   const items = [
-    { href: `${base}/dashboard`, label: "Dashboard", icon: LayoutDashboard },
-    { href: `${base}/orders/pending`, label: "Pending", icon: Clock3 },
-    { href: `${base}/orders/completed`, label: "Completed", icon: CheckCircle2 },
-    { href: `${base}/orders/history`, label: "History", icon: History },
-    { href: `${base}/menu`, label: "Menu", icon: UtensilsCrossed },
-    { href: `${base}/timeslots`, label: "Time Slots", icon: CalendarClock },
+    { href: `${base}/dashboard`, label: t.dashboard, icon: LayoutDashboard },
+    { href: `${base}/orders/pending`, label: t.pending, icon: Clock3 },
+    { href: `${base}/orders/completed`, label: t.completed, icon: CheckCircle2 },
+    { href: `${base}/orders/history`, label: t.history, icon: History },
+    { href: `${base}/menu`, label: t.menu, icon: UtensilsCrossed },
+    { href: `${base}/timeslots`, label: t.timeSlots, icon: CalendarClock },
   ];
 
   return (
@@ -39,7 +42,7 @@ export function BranchNav({
         className="mr-1 flex shrink-0 items-center gap-1 py-3 text-xs font-medium text-ink-400 hover:text-brand-600"
       >
         <ChevronLeft className="size-3.5" />
-        Locations
+        {t.locations}
       </Link>
       {items.map((item) => {
         const active = pathname.startsWith(item.href);
@@ -68,7 +71,7 @@ export function BranchNav({
         }`}
       >
         <Settings className="size-3.5" />
-        Location Settings
+        {t.locationSettings}
       </Link>
     </nav>
   );

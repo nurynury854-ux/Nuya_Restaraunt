@@ -3,6 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Check, ChevronDown, ChevronUp, Sparkles } from "lucide-react";
+import { useDictionary } from "@/components/i18n/LocaleProvider";
+import { formatMessage } from "@/lib/i18n/format";
 import { Card } from "@/components/ui/Card";
 
 export interface OnboardingStep {
@@ -14,6 +16,8 @@ export interface OnboardingStep {
 }
 
 export function OnboardingChecklist({ steps }: { steps: OnboardingStep[] }) {
+  const { dict } = useDictionary();
+  const t = dict.adminDashboard.onboarding;
   const [collapsed, setCollapsed] = useState(false);
   const doneCount = steps.filter((s) => s.done).length;
 
@@ -30,10 +34,10 @@ export function OnboardingChecklist({ steps }: { steps: OnboardingStep[] }) {
           </span>
           <div>
             <h2 className="font-[family-name:var(--font-display)] text-lg font-bold text-ink-900">
-              Finish setting up your site
+              {t.title}
             </h2>
             <p className="text-sm text-ink-500">
-              {doneCount} of {steps.length} done
+              {formatMessage(t.progress, { done: doneCount, total: steps.length })}
             </p>
           </div>
         </div>

@@ -4,6 +4,8 @@ import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Upload, CheckCircle2 } from "lucide-react";
 import type { SerializedTenant } from "@/lib/types";
+import { useDictionary } from "@/components/i18n/LocaleProvider";
+import { formatMessage } from "@/lib/i18n/format";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { FieldWrapper, Input, Select } from "@/components/ui/Field";
@@ -13,6 +15,8 @@ const ALL_TIMEZONES: string[] =
 
 export function TenantSettingsForm({ tenant }: { tenant: SerializedTenant }) {
   const router = useRouter();
+  const { dict } = useDictionary();
+  const t = dict.adminSettings.tenantSettings;
   const [businessName, setBusinessName] = useState(tenant.businessName);
   const [logoUrl, setLogoUrl] = useState(tenant.logoUrl ?? "");
   const [accentColor, setAccentColor] = useState(tenant.accentColor ?? "#c8722e");
@@ -36,7 +40,7 @@ export function TenantSettingsForm({ tenant }: { tenant: SerializedTenant }) {
       const res = await fetch("/api/uploads", { method: "POST", body: form });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "Upload failed");
+        setError(data.error ?? t.uploadFailed);
         return;
       }
       setLogoUrl(data.url);
@@ -57,7 +61,7 @@ export function TenantSettingsForm({ tenant }: { tenant: SerializedTenant }) {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "Couldn't save changes");
+        setError(data.error ?? t.saveError);
         return;
       }
       router.refresh();
@@ -68,18 +72,18 @@ export function TenantSettingsForm({ tenant }: { tenant: SerializedTenant }) {
 
   return (
     <Card className="flex max-w-lg flex-col gap-4 p-5">
-      <FieldWrapper label="Business name" required>
+      <FieldWrapper label={t.businessName} required>
         <Input value={businessName} onChange={(e) => setBusinessName(e.target.value)} required />
       </FieldWrapper>
 
-      <FieldWrapper label="Logo" hint="JPG, PNG, WebP, or GIF · 5MB max">
+      <FieldWrapper label={t.logo} hint={t.logoHint}>
         <div className="flex items-center gap-3">
           <div className="relative shrink-0">
             {logoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={logoUrl}
-                alt="Logo"
+                alt={t.logo}
                 className="size-14 rounded-xl border border-ink-100 object-cover"
               />
             ) : (
@@ -109,16 +113,13 @@ export function TenantSettingsForm({ tenant }: { tenant: SerializedTenant }) {
               loading={uploading}
               onClick={() => fileInputRef.current?.click()}
             >
-              {logoUrl ? "Replace logo" : "Upload logo"}
+              {logoUrl ? t.replaceLogo : t.uploadLogo}
             </Button>
           </div>
         </div>
       </FieldWrapper>
 
-      <FieldWrapper
-        label="Timezone"
-        hint='Used to figure out what "today" means for closed-date overrides'
-      >
+      <FieldWrapper label={t.timezone} hint={t.timezoneHint}>
         <Select value={timezone} onChange={(e) => setTimezone(e.target.value)}>
           {!ALL_TIMEZONES.includes(timezone) && <option value={timezone}>{timezone}</option>}
           {ALL_TIMEZONES.map((tz) => (
@@ -133,12 +134,12 @@ export function TenantSettingsForm({ tenant }: { tenant: SerializedTenant }) {
             onClick={() => setTimezone(detectedTimezone)}
             className="mt-1 cursor-pointer text-xs font-medium text-brand-600 hover:text-brand-700"
           >
-            Use detected timezone ({detectedTimezone})
+            {formatMessage(t.useDetectedTimezone, { tz: detectedTimezone })}
           </button>
         )}
       </FieldWrapper>
 
-      <FieldWrapper label="Brand color" hint="Used as an accent color on your site">
+      <FieldWrapper label={t.brandColor} hint={t.brandColorHint}>
         <div className="flex items-center gap-3">
           <input
             type="color"
@@ -157,7 +158,7 @@ export function TenantSettingsForm({ tenant }: { tenant: SerializedTenant }) {
       {error && <p className="text-sm text-danger-500">{error}</p>}
 
       <Button size="sm" loading={saving} disabled={uploading} onClick={save} className="self-start">
-        Save Changes
+        {t.saveChanges}
       </Button>
     </Card>
   );

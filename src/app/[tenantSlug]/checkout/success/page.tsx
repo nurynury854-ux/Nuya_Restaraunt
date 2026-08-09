@@ -5,11 +5,15 @@ import { useParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { CheckCircle2, PackageSearch } from "lucide-react";
 import { useOrderStore } from "@/lib/store/orderStore";
+import { useDictionary } from "@/components/i18n/LocaleProvider";
+import { formatMessage } from "@/lib/i18n/format";
 import { Button } from "@/components/ui/Button";
 
 export default function CheckoutSuccessPage() {
   const router = useRouter();
   const { tenantSlug } = useParams<{ tenantSlug: string }>();
+  const { dict } = useDictionary();
+  const t = dict.checkout.success;
   const lastOrderNo = useOrderStore((s) => s.lastOrderNo);
   const lastOrderId = useOrderStore((s) => s.lastOrderId);
   const [ready, setReady] = useState(false);
@@ -55,11 +59,11 @@ export default function CheckoutSuccessPage() {
         className="mt-6 flex flex-col items-center gap-2"
       >
         <h1 className="font-[family-name:var(--font-display)] text-2xl font-bold text-ink-900 sm:text-3xl">
-          Order placed!
+          {t.orderPlaced}
         </h1>
-        <p className="text-ink-500">Thanks for your order — we&apos;re getting it ready.</p>
+        <p className="text-ink-500">{t.thanksMessage}</p>
         <p className="mt-3 rounded-full bg-brand-100 px-4 py-1.5 text-sm font-semibold text-brand-700">
-          Order #{lastOrderNo}
+          {formatMessage(t.orderNumber, { orderNo: lastOrderNo ?? "" })}
         </p>
       </motion.div>
 
@@ -76,7 +80,7 @@ export default function CheckoutSuccessPage() {
             onClick={() => router.push(`/${tenantSlug}/orders/${lastOrderId}`)}
           >
             <PackageSearch className="size-4" />
-            Track Your Order
+            {t.trackYourOrder}
           </Button>
         )}
         <Button
@@ -84,7 +88,7 @@ export default function CheckoutSuccessPage() {
           variant={lastOrderId ? "ghost" : "primary"}
           onClick={() => router.push(`/${tenantSlug}`)}
         >
-          Back to Home
+          {t.backToHome}
         </Button>
       </motion.div>
     </div>

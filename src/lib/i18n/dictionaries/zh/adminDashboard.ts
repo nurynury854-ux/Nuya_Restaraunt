@@ -1,0 +1,30 @@
+import type { adminDashboard as enAdminDashboard } from "@/lib/i18n/dictionaries/en/adminDashboard";
+
+export const adminDashboard: typeof enAdminDashboard = {
+  heading: "儀表板",
+  todaysOrders: "今日訂單數",
+  todaysRevenue: "今日營收",
+  previousMonth: "上個月",
+  nextMonth: "下個月",
+  orders: "訂單數",
+  revenue: "營收",
+  avgOrder: "平均訂單金額",
+  bestSellers: "熱銷商品",
+  noCompletedOrders: "本月尚無已完成的訂單。",
+  sold: "售出 {count} 份",
+  dayLabel: "{day} 日",
+  dayOrders: "{count} 筆訂單・${revenue}",
+  dayAriaLabel: "{day} 日：{count} 筆訂單，營收 ${revenue}",
+  onboarding: {
+    title: "完成您的網站設定",
+    progress: "已完成 {done} / {total} 項",
+    logoLabel: "上傳您的商標",
+    logoDescription: "會顯示在您的管理後台，並套用到顧客的訂購網站",
+    categoryLabel: "新增菜單分類",
+    categoryDescription: "例如：「前菜」、「飲料」",
+    itemLabel: "新增菜單品項",
+    itemDescription: "菜單是空的，顧客就無法下單",
+    hoursLabel: "設定分店詳細資訊",
+    hoursDescription: "地址、電話與營業時間——會在顧客下單前顯示給他們看",
+  },
+};

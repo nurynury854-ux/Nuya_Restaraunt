@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { SerializedBranch } from "@/lib/types";
+import { useDictionary } from "@/components/i18n/LocaleProvider";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { FieldWrapper, Input } from "@/components/ui/Field";
@@ -10,6 +11,8 @@ import { Badge } from "@/components/ui/Badge";
 
 export function BranchSettingsForm({ branch }: { branch: SerializedBranch }) {
   const router = useRouter();
+  const { dict } = useDictionary();
+  const t = dict.adminSettings.branchSettings;
   const [draft, setDraft] = useState(branch);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -35,7 +38,7 @@ export function BranchSettingsForm({ branch }: { branch: SerializedBranch }) {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "Couldn't save changes");
+        setError(data.error ?? t.saveError);
         return;
       }
       router.refresh();
@@ -50,38 +53,36 @@ export function BranchSettingsForm({ branch }: { branch: SerializedBranch }) {
         <h2 className="font-semibold text-ink-900">{branch.name}</h2>
         <div className="flex items-center gap-2">
           <Badge tone={draft.isActive ? "success" : "danger"}>
-            {draft.isActive ? "Active" : "Disabled"}
+            {draft.isActive ? t.active : t.disabled}
           </Badge>
           <button
             onClick={() => update({ isActive: !draft.isActive })}
             className="cursor-pointer rounded-lg border border-ink-100 px-2.5 py-1 text-xs font-medium text-ink-500 hover:bg-ink-100"
           >
-            {draft.isActive ? "Disable" : "Enable"}
+            {draft.isActive ? t.disable : t.enable}
           </button>
         </div>
       </div>
 
-      <p className="text-xs text-ink-400">
-        Disabling this location hides it from the customer ordering page until it&apos;s enabled again.
-      </p>
+      <p className="text-xs text-ink-400">{t.disableHint}</p>
 
-      <FieldWrapper label="Location name">
+      <FieldWrapper label={t.locationName}>
         <Input value={draft.name} onChange={(e) => update({ name: e.target.value })} />
       </FieldWrapper>
-      <FieldWrapper label="Address">
+      <FieldWrapper label={t.address}>
         <Input value={draft.address} onChange={(e) => update({ address: e.target.value })} />
       </FieldWrapper>
-      <FieldWrapper label="Phone">
+      <FieldWrapper label={t.phone}>
         <Input value={draft.phone} onChange={(e) => update({ phone: e.target.value })} />
       </FieldWrapper>
-      <FieldWrapper label="Hours">
+      <FieldWrapper label={t.hours}>
         <Input value={draft.hours} onChange={(e) => update({ hours: e.target.value })} />
       </FieldWrapper>
 
       {error && <p className="text-xs text-danger-500">{error}</p>}
 
       <Button size="sm" loading={busy} onClick={save} className="self-start">
-        Save Changes
+        {t.saveChanges}
       </Button>
     </Card>
   );

@@ -32,8 +32,12 @@
   --color-danger-500: #c0392b;
   --color-danger-600: #a12f22;
 
-  --font-display: var(--font-fraunces);
-  --font-sans: var(--font-inter);
+  /* Neither Latin display/body font has CJK glyphs, so the Traditional
+     Chinese fonts are chained in as fallbacks here — the browser picks the
+     right font per character from this stack, so Latin and Chinese text can
+     mix in the same string (e.g. a business's own name) with no extra logic. */
+  --font-display: var(--font-fraunces), var(--font-noto-serif-tc);
+  --font-sans: var(--font-inter), var(--font-noto-sans-tc);
 
   --shadow-soft: 0 2px 8px rgba(74, 61, 52, 0.06), 0 8px 24px rgba(74, 61, 52, 0.08);
   --shadow-lift: 0 12px 32px rgba(74, 61, 52, 0.14), 0 4px 12px rgba(74, 61, 52, 0.08);
