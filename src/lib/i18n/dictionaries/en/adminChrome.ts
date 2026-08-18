@@ -25,4 +25,11 @@ export const adminChrome = {
     manage: "Manage",
     addLocation: "Add a Location",
   },
+  emailVerifyBanner: {
+    message: "Please verify your email address ({email}).",
+    resend: "Resend email",
+    sending: "Sending...",
+    sent: "Verification email sent — check your inbox.",
+    error: "Couldn't send the email. Please try again.",
+  },
 };

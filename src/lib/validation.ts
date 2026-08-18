@@ -210,6 +210,15 @@ export const platformTenantUpdateSchema = z.object({
   isActive: z.boolean(),
 });
 
+export const forgotPasswordSchema = z.object({
+  email: z.string().trim().min(1, "Please enter your email").email("Enter a valid email"),
+});
+
+export const resetPasswordSchema = z.object({
+  token: z.string().trim().min(1, "Missing reset token"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+});
+
 export const signupSchema = z.object({
   email: z.string().trim().min(1, "Please enter your email").email("Enter a valid email"),
   password: z.string().min(8, "Password must be at least 8 characters"),

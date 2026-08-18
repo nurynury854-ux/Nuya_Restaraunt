@@ -88,6 +88,13 @@ function LoginForm() {
             </div>
           </FieldWrapper>
 
+          <Link
+            href="/forgot-password"
+            className="-mt-2 self-end text-xs font-medium text-brand-600 hover:text-brand-700"
+          >
+            {t.forgotPassword}
+          </Link>
+
           {error && <p className="text-sm text-danger-500">{error}</p>}
 
           <Button type="submit" fullWidth size="lg" loading={loading} className="mt-2">

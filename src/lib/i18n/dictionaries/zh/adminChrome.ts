@@ -27,4 +27,11 @@ export const adminChrome: typeof enAdminChrome = {
     manage: "管理",
     addLocation: "新增分店",
   },
+  emailVerifyBanner: {
+    message: "請驗證您的電子郵件地址（{email}）。",
+    resend: "重新寄送郵件",
+    sending: "寄送中...",
+    sent: "驗證郵件已寄出，請至信箱查收。",
+    error: "郵件寄送失敗，請再試一次。",
+  },
 };

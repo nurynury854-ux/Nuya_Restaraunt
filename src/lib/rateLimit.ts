@@ -72,6 +72,16 @@ export const RATE_LIMITS = {
   // main brute-force surface (guessing phone numbers against a known order
   // number, or vice versa). Generous enough for a customer fumbling digits.
   orderLookup: { limit: 15, windowMs: 60_000 },
+  // Authenticated, but each call sends an email — keep it from being used to
+  // spam an inbox (or burn through Resend's send quota).
+  resendVerification: { limit: 3, windowMs: 5 * 60_000 },
+  // Public, unauthenticated — the enumeration/spam surface for "forgot
+  // password". Deliberately tight; a real user rarely needs more than a
+  // couple of tries in five minutes.
+  forgotPassword: { limit: 3, windowMs: 5 * 60_000 },
+  // Public, unauthenticated — guarding the token itself (128 bits, so brute
+  // force isn't realistic) more than rate-limiting a legitimate retry.
+  resetPassword: { limit: 10, windowMs: 60_000 },
 } as const satisfies Record<string, RateLimitRule>;
 
 export function checkRateLimit(key: string, rule: RateLimitRule): RateLimitResult {

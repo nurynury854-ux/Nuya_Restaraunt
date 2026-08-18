@@ -43,12 +43,33 @@ model Tenant {
 }
 
 model AdminUser {
-  id           String   @id @default(cuid())
-  tenantId     String
-  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  email        String   @unique
-  passwordHash String
-  createdAt    DateTime @default(now())
+  id            String   @id @default(cuid())
+  tenantId      String
+  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  email         String   @unique
+  passwordHash  String
+  /// Signup email verification. Not enforced (an unverified admin can still
+  /// use their site) — this platform can't yet guarantee outbound email
+  /// reaches an arbitrary tenant's inbox (no verified sending domain), so
+  /// blocking on it would risk locking self-serve signups out entirely.
+  /// It's a nudge (see AuthToken), not a gate.
+  emailVerified Boolean  @default(false)
+  createdAt     DateTime @default(now())
+
+  authTokens AuthToken[]
+}
+
+/// type: "EMAIL_VERIFICATION" | "PASSWORD_RESET"
+model AuthToken {
+  id          String    @id @default(cuid())
+  token       String    @unique
+  type        String
+  adminUserId String
+  adminUser   AdminUser @relation(fields: [adminUserId], references: [id], onDelete: Cascade)
+  expiresAt   DateTime
+  createdAt   DateTime  @default(now())
+
+  @@index([adminUserId, type])
 }
 
 model Branch {

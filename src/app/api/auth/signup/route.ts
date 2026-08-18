@@ -6,6 +6,7 @@ import { signupSchema } from "@/lib/validation";
 import { isSlugAllowed } from "@/lib/reservedSlugs";
 import { ADMIN_SESSION_COOKIE, signAdminSession } from "@/lib/session";
 import { rateLimit, enforceBodyLimit, RATE_LIMITS, BODY_LIMITS } from "@/lib/rateLimit";
+import { sendVerificationEmail } from "@/lib/email/authEmails";
 
 export async function POST(request: NextRequest) {
   try {
@@ -61,6 +62,16 @@ export async function POST(request: NextRequest) {
       tenantId: tenant.id,
       tenantSlug: tenant.slug,
     });
+
+    // Best-effort — never blocks signup. Without a verified sending domain
+    // yet, this only actually lands in an inbox for the Resend account's
+    // own address; the admin can always retry later via the "resend" banner.
+    sendVerificationEmail({
+      adminUserId: admin.id,
+      to: admin.email,
+      businessName: tenant.businessName,
+      origin: request.nextUrl.origin,
+    }).catch((error) => console.error("Failed to send verification email:", error));
 
     const response = NextResponse.json({ ok: true, tenantSlug: tenant.slug }, { status: 201 });
     response.cookies.set(ADMIN_SESSION_COOKIE, token, {

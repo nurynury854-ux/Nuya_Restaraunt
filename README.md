@@ -24,7 +24,8 @@ This started as a single-restaurant demo and was rebuilt into a real multi-tenan
    - `PLATFORM_ADMIN_EMAIL` — the email you'll log in with.
    - `PLATFORM_ADMIN_PASSWORD` — any strong password.
    - `PLATFORM_SESSION_SECRET` — another long random string, generated the same way as `SESSION_SECRET` (`openssl rand -hex 32`) — keep it different from `SESSION_SECRET` so a leak of one can't be used to forge the other. Until these three are set, `/platform-admin` has no valid credentials and login always fails.
-5. **Set up the database schema once**, from your own computer:
+5. **`RESEND_API_KEY`** (needed for email verification / password reset — see below) — create a free account at [resend.com](https://resend.com) and generate an API key. Without a verified sending domain (`EMAIL_FROM` + a domain added under Resend → Domains), mail can only reach the Resend account's own inbox — fine for testing solo, not for real tenants signing up. Add a custom domain in Resend whenever you're ready and point `EMAIL_FROM` at it (e.g. `Bogi <noreply@yourdomain.com>`); every verify/reset link is already built from the request's own origin, so no other code or config needs to change.
+6. **Set up the database schema once**, from your own computer:
    ```bash
    npm install
    ```
@@ -37,7 +38,7 @@ This started as a single-restaurant demo and was rebuilt into a real multi-tenan
    npm run db:setup
    ```
    This creates the tables and loads one example tenant (see below) so there's something to click through immediately.
-6. **Deploy.** The build runs `prisma generate` automatically.
+7. **Deploy.** The build runs `prisma generate` automatically.
 
 ### Demo tenant (seeded automatically)
 
@@ -63,6 +64,11 @@ yourdomain.com/{slug}/orders/   → track an order by number + phone
 yourdomain.com/{slug}/admin/    → that tenant's admin panel
 ```
 A reserved-word list (`admin`, `login`, `signup`, `api`, etc.) prevents a tenant from ever picking a slug that would collide with a platform route.
+
+### Email (verification + password reset)
+Signup fires off a best-effort "verify your email" email (via [Resend](https://resend.com)); a persistent banner in the admin panel offers to resend it until the admin clicks through. This is a nudge, not a gate — signup, login, and the admin panel all work before verifying, since this platform can't yet guarantee delivery to an arbitrary tenant's inbox without a verified sending domain (see the deploy steps above), and gating self-serve signup on that would risk locking new tenants out entirely.
+
+`/forgot-password` → `/reset-password` is a standard token-based flow: a random token is generated, only its SHA-256 hash is stored (`AuthToken`, `src/lib/authTokens.ts`), and it's single-use and short-lived (24h for verification links, 1h for reset links). Clicking a reset link also settles email verification, since it proves the same thing — that the admin controls that inbox. Not yet built: order-confirmation emails to customers (checkout only collects name + phone, no email field) and subscription/trial-related emails (there's no billing system yet).
 
 ### Tenant isolation
 This is the part that matters most in a multi-tenant app. Every admin session is signed with the tenant it belongs to; visiting another tenant's `/admin` URL redirects to login rather than leaking anything. Every API route re-derives the tenant from the authenticated session (never trusts a tenant id from the request) and filters every query by it, and every "fetch by id" admin action (edit a branch, update a menu item, etc.) explicitly checks the fetched record's `tenantId` before allowing the read/write — so even guessing another tenant's internal ID doesn't work. This was verified directly (created two tenants, confirmed one's session/API calls cannot see or modify the other's branches, menu, or orders).
@@ -100,7 +106,7 @@ This is a hand-rolled dictionary system, not `next-intl` or Next's built-in i18n
 ## Known simplifications (demo/early-product scope)
 
 - One admin account = one tenant (no multi-business logins yet).
-- No email verification on signup, and no password-reset flow yet.
+- Email verification is a nudge, not an enforced gate (see "Email" above) — and without a verified sending domain, mail can currently only reach the Resend account's own inbox, not real tenants. No order-confirmation emails to customers or subscription/trial emails yet.
 - Time slots are a recurring daily list, not tied to a specific calendar date (closed-date overrides exist, but there's no way to give a single date different hours yet).
 - Option groups (modifiers) belong to one menu item each — there's no shared/reusable library, so a business re-creates a similar group (e.g. "Spice Level") on every item that needs it.
 - "Bank Transfer" payment shows a clearly-labeled empty QR placeholder — no real payment processing is wired up.
@@ -124,7 +130,8 @@ src/
   app/
     page.tsx                       public marketing page
     login/, signup/                 platform-level auth pages
-    api/auth/                       login, logout, signup, slug-availability
+    forgot-password/, reset-password/, verify-email/  password reset + email verification
+    api/auth/                       login, logout, signup, slug-availability, forgot/reset-password, resend-verification
     [tenantSlug]/
       layout.tsx                    resolves the tenant from the URL, 404s if missing/inactive,
                                      applies the tenant's brand color
@@ -142,6 +149,8 @@ src/
     tenant.ts                      cached tenant-by-slug resolver, used by every tenant page
     session.ts, adminAuth.ts        signed session + the assertTenantOwns() ownership guard
     reservedSlugs.ts                slug validation + reserved-word list
+    authTokens.ts                   hashed, single-use tokens behind email verification + password reset
+    email/                          Resend client, HTML templates, sendVerificationEmail()/sendPasswordResetEmail()
     hooks/usePolling.ts             shared interval-polling hook behind the live updates
     color.ts                       derives a hover shade from a tenant's brand color
     store/orderStore.ts             tenant-scoped cart/order-flow state

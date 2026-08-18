@@ -6,6 +6,7 @@ import { getTenantBySlug } from "@/lib/tenant";
 import { AdminTopBar } from "@/components/admin/AdminTopBar";
 import { BranchNav } from "@/components/admin/BranchNav";
 import { NewOrderNotifier } from "@/components/admin/NewOrderNotifier";
+import { EmailVerifyBanner } from "@/components/admin/EmailVerifyBanner";
 
 export default async function BranchPanelLayout({
   children,
@@ -29,6 +30,13 @@ export default async function BranchPanelLayout({
   // a 404 here protects all of them.
   if (!branch || branch.tenantId !== tenant?.id) notFound();
 
+  const admin = session
+    ? await prisma.adminUser.findUnique({
+        where: { id: session.sub },
+        select: { emailVerified: true },
+      })
+    : null;
+
   return (
     <div className="flex flex-1 flex-col">
       <AdminTopBar
@@ -38,6 +46,7 @@ export default async function BranchPanelLayout({
         email={session?.email ?? ""}
         branchName={branch.name}
       />
+      {admin && !admin.emailVerified && <EmailVerifyBanner email={session!.email} />}
       <BranchNav tenantSlug={tenantSlug} branchId={branchId} />
       <NewOrderNotifier branchId={branchId} />
       <div className="flex-1 px-4 py-6 sm:px-8 sm:py-8">{children}</div>

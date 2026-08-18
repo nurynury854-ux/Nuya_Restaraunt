@@ -11,6 +11,7 @@ import { adminMenu } from "./adminMenu";
 import { adminSettings } from "./adminSettings";
 import { adminKitchen } from "./adminKitchen";
 import { platformAdmin } from "./platformAdmin";
+import { email } from "./email";
 
 export const en = {
   common,
@@ -26,6 +27,7 @@ export const en = {
   adminSettings,
   adminKitchen,
   platformAdmin,
+  email,
 };
 
 export type Dictionary = typeof en;

@@ -4,6 +4,7 @@ import { getTenantBySlug } from "@/lib/tenant";
 import { getServerDictionary } from "@/lib/i18n/getServerDictionary";
 import { AdminBranchCards } from "@/components/admin/AdminBranchCards";
 import { AdminTopBar } from "@/components/admin/AdminTopBar";
+import { EmailVerifyBanner } from "@/components/admin/EmailVerifyBanner";
 import Link from "next/link";
 import { Settings } from "lucide-react";
 
@@ -22,10 +23,18 @@ export default async function AdminBranchSelectPage({
   ]);
   const t = dict.adminChrome.branchSelect;
 
-  const branches = await prisma.branch.findMany({
-    where: { tenantId: tenant!.id },
-    orderBy: { createdAt: "asc" },
-  });
+  const [branches, admin] = await Promise.all([
+    prisma.branch.findMany({
+      where: { tenantId: tenant!.id },
+      orderBy: { createdAt: "asc" },
+    }),
+    session
+      ? prisma.adminUser.findUnique({
+          where: { id: session.sub },
+          select: { emailVerified: true },
+        })
+      : null,
+  ]);
 
   return (
     <div className="flex flex-1 flex-col">
@@ -35,6 +44,7 @@ export default async function AdminBranchSelectPage({
         logoUrl={tenant!.logoUrl}
         email={session?.email ?? ""}
       />
+      {admin && !admin.emailVerified && <EmailVerifyBanner email={session!.email} />}
       <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col items-center px-5 py-14">
         <div className="text-center">
           <p className="font-[family-name:var(--font-display)] text-2xl font-bold text-ink-900">
