@@ -22,3 +22,21 @@ export function getResendClient(): Resend {
  * sending domain is verified (see README).
  */
 export const EMAIL_FROM = process.env.EMAIL_FROM || "Bogi <onboarding@resend.dev>";
+
+/**
+ * Whether this deployment can actually deliver mail to an arbitrary address.
+ *
+ * Two ways it can't, and both look identical to the user — a cheerful "check
+ * your inbox" for a message that will never arrive:
+ *
+ *   - `RESEND_API_KEY` is unset, so `sendEmail` skips the send entirely.
+ *   - `EMAIL_FROM` is unset, so we're on Resend's shared sandbox sender,
+ *     which only delivers to the Resend account's own verified inbox.
+ *
+ * Flows that tell someone to go and check their email should ask first and
+ * say so plainly instead. This describes the deployment, never a particular
+ * account, so surfacing it leaks nothing about who has an account here.
+ */
+export function isEmailDeliverable(): boolean {
+  return Boolean(process.env.RESEND_API_KEY) && Boolean(process.env.EMAIL_FROM);
+}

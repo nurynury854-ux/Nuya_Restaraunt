@@ -2,9 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { ADMIN_SESSION_COOKIE, verifyAdminSession } from "@/lib/session";
 import { PLATFORM_SESSION_COOKIE, verifyPlatformSession } from "@/lib/platformAuth";
-
-// Matches /{tenantSlug}/admin and everything under it.
-const ADMIN_PATH = /^\/([^/]+)\/admin(\/.*)?$/;
+import { ADMIN_PATH } from "@/lib/redirects";
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;

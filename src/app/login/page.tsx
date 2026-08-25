@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/Button";
 import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
 import { useDictionary } from "@/components/i18n/LocaleProvider";
 import { PLATFORM_NAME } from "@/lib/constants";
+import { resolvePostLoginPath } from "@/lib/redirects";
 
 function LoginForm() {
   const router = useRouter();
@@ -33,12 +34,11 @@ function LoginForm() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? t.loginFailed);
+        setError(dict.auth.errors[data.code] ?? data.error ?? t.loginFailed);
         setLoading(false);
         return;
       }
-      const next = searchParams.get("next") || `/${data.tenantSlug}/admin`;
-      router.replace(next);
+      router.replace(resolvePostLoginPath(searchParams.get("next"), data.tenantSlug));
     } catch {
       setError(dict.common.networkError);
       setLoading(false);

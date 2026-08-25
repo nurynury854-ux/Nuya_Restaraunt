@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Mail, CheckCircle2 } from "lucide-react";
+import { Mail, CheckCircle2, AlertTriangle } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { FieldWrapper, Input } from "@/components/ui/Field";
 import { Button } from "@/components/ui/Button";
@@ -17,6 +17,7 @@ export default function ForgotPasswordPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
+  const [mailDeliverable, setMailDeliverable] = useState(true);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -28,12 +29,13 @@ export default function ForgotPasswordPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
       });
+      const data = await res.json();
       if (!res.ok) {
-        const data = await res.json();
-        setError(data.error ?? dict.common.somethingWentWrong);
+        setError(dict.auth.errors[data.code] ?? data.error ?? dict.common.somethingWentWrong);
         setLoading(false);
         return;
       }
+      setMailDeliverable(data.mailDeliverable !== false);
       setSent(true);
     } catch {
       setError(dict.common.networkError);
@@ -59,8 +61,17 @@ export default function ForgotPasswordPage() {
       <Card className="w-full max-w-sm p-6">
         {sent ? (
           <div className="flex flex-col items-center gap-3 text-center">
-            <CheckCircle2 className="size-10 text-success-500" strokeWidth={1.5} />
-            <p className="text-sm text-ink-700">{t.genericSuccess}</p>
+            {mailDeliverable ? (
+              <>
+                <CheckCircle2 className="size-10 text-success-500" strokeWidth={1.5} />
+                <p className="text-sm text-ink-700">{t.genericSuccess}</p>
+              </>
+            ) : (
+              <>
+                <AlertTriangle className="size-10 text-gold-400" strokeWidth={1.5} />
+                <p className="text-sm text-ink-700">{t.mailNotConfigured}</p>
+              </>
+            )}
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">

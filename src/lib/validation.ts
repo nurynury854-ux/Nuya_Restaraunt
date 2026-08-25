@@ -214,6 +214,10 @@ export const forgotPasswordSchema = z.object({
   email: z.string().trim().min(1, "Please enter your email").email("Enter a valid email"),
 });
 
+export const verifyEmailSchema = z.object({
+  token: z.string().trim().min(1, "Missing verification token"),
+});
+
 export const resetPasswordSchema = z.object({
   token: z.string().trim().min(1, "Missing reset token"),
   password: z.string().min(8, "Password must be at least 8 characters"),

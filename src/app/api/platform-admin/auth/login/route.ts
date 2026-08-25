@@ -6,6 +6,8 @@ import { handleApiError } from "@/lib/apiResponse";
 
 export async function POST(request: NextRequest) {
   try {
+    // Per-IP is the only identity available here: the platform owner is a
+    // single env-configured credential pair, not a row keyed by email.
     const limited = rateLimit(request, "platform-login", RATE_LIMITS.login);
     if (limited) return limited;
     const tooLarge = enforceBodyLimit(request, BODY_LIMITS.json);
@@ -15,7 +17,10 @@ export async function POST(request: NextRequest) {
     const { email, password } = adminLoginSchema.parse(body);
 
     if (!checkPlatformCredentials(email, password)) {
-      return NextResponse.json({ error: "Incorrect email or password" }, { status: 401 });
+      return NextResponse.json(
+        { error: "Incorrect email or password", code: "invalid_credentials" },
+        { status: 401 }
+      );
     }
 
     const token = signPlatformSession();

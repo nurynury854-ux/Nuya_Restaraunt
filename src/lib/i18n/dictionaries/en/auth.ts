@@ -1,4 +1,14 @@
 export const auth = {
+  /**
+   * Keyed by the `code` an auth endpoint returns alongside its English
+   * `error` string, so a failure reads in the user's own language. Anything
+   * without a code still falls back to the server's `error` text.
+   */
+  errors: {
+    invalid_credentials: "Incorrect email or password",
+    tenant_inactive: "This site has been deactivated. Please contact support.",
+    rate_limited: "Too many attempts. Please wait a minute and try again.",
+  } as Record<string, string>,
   login: {
     subtitle: "Log in to your admin panel",
     email: "Email",
@@ -14,6 +24,8 @@ export const auth = {
     email: "Email",
     submit: "Send Reset Link",
     genericSuccess: "If an account exists for that email, we've sent a password reset link.",
+    mailNotConfigured:
+      "This deployment can't send email yet, so no reset link will arrive. Ask whoever runs the site to reset your password for you.",
     backToLogin: "Back to log in",
   },
   resetPassword: {
@@ -27,10 +39,13 @@ export const auth = {
     goToLogin: "Go to log in",
   },
   verifyEmail: {
+    confirmPrompt: "Confirm this is your email address to finish verifying it.",
+    confirmButton: "Verify My Email",
     verifying: "Verifying your email...",
     success: "Your email has been verified.",
     invalidToken: "This verification link is invalid or has expired.",
     continueToAdmin: "Continue to your admin panel",
+    missingToken: "This link is missing its verification code.",
   },
   signup: {
     subtitle: "Create your online ordering site",

@@ -4,6 +4,7 @@ import { handleApiError } from "@/lib/apiResponse";
 import { forgotPasswordSchema } from "@/lib/validation";
 import { rateLimit, enforceBodyLimit, RATE_LIMITS, BODY_LIMITS } from "@/lib/rateLimit";
 import { sendPasswordResetEmail } from "@/lib/email/authEmails";
+import { isEmailDeliverable } from "@/lib/email/resend";
 
 export async function POST(request: NextRequest) {
   try {
@@ -31,7 +32,11 @@ export async function POST(request: NextRequest) {
       }).catch((error) => console.error("Failed to send password reset email:", error));
     }
 
-    return NextResponse.json({ ok: true });
+    // Deliberately not part of the "does this account exist" answer above —
+    // it's a fact about the deployment. Without it the page would promise a
+    // reset link that this environment physically cannot send, and the user
+    // would keep waiting on an inbox instead of asking for help.
+    return NextResponse.json({ ok: true, mailDeliverable: isEmailDeliverable() });
   } catch (error) {
     return handleApiError(error);
   }

@@ -34,7 +34,7 @@ function ResetPasswordForm() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? t.invalidToken);
+        setError(dict.auth.errors[data.code] ?? data.error ?? t.invalidToken);
         setLoading(false);
         return;
       }

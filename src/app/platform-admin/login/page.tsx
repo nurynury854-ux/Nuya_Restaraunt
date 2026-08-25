@@ -30,7 +30,7 @@ export default function PlatformAdminLoginPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? t.loginFailed);
+        setError(dict.auth.errors[data.code] ?? data.error ?? t.loginFailed);
         setLoading(false);
         return;
       }

@@ -21,8 +21,8 @@ interface Bucket {
   resetAt: number; // epoch ms when the window rolls over
 }
 
-// key ("bucket:ip") -> counter. Module-level so it survives across requests
-// within a warm instance.
+// key ("bucket:ip", or an account-scoped key) -> counter. Module-level so it
+// survives across requests within a warm instance.
 const store = new Map<string, Bucket>();
 
 // Opportunistic cleanup. Without this the map would grow one entry per unique
@@ -57,8 +57,18 @@ export interface RateLimitResult {
  * but tight enough to blunt automated abuse. Adjust here in one place.
  */
 export const RATE_LIMITS = {
-  // Password guessing + bcrypt CPU drain. A human never needs 10 tries/min.
+  // Password guessing against one account. Keyed per email (see the login
+  // route), not per IP: several testers on one office NAT — or any deployment
+  // where no forwarded-IP header reaches us and everyone lands in the shared
+  // "unknown" bucket — would otherwise burn each other's budget and get
+  // locked out by someone else's typo. A successful login clears the counter,
+  // so in practice only unbroken runs of failures accumulate.
   login: { limit: 10, windowMs: 60_000 },
+  // The flood guard the per-email limit can't provide: caps how much bcrypt
+  // and DB work one source can trigger regardless of which accounts it aims
+  // at. Also bounds how many per-email buckets a single IP can create, which
+  // keeps the store from growing without limit.
+  loginIp: { limit: 30, windowMs: 60_000 },
   // Each signup creates a tenant + branch + admin. Keep mass creation slow.
   signup: { limit: 5, windowMs: 60 * 60_000 },
   // Slug availability probing / enumeration. Called live while typing, so
@@ -82,6 +92,9 @@ export const RATE_LIMITS = {
   // Public, unauthenticated — guarding the token itself (128 bits, so brute
   // force isn't realistic) more than rate-limiting a legitimate retry.
   resetPassword: { limit: 10, windowMs: 60_000 },
+  // Same shape as resetPassword: a 128-bit single-use token, so this is about
+  // capping retries rather than stopping a guess.
+  verifyEmail: { limit: 10, windowMs: 60_000 },
 } as const satisfies Record<string, RateLimitRule>;
 
 export function checkRateLimit(key: string, rule: RateLimitRule): RateLimitResult {
@@ -110,6 +123,15 @@ export function checkRateLimit(key: string, rule: RateLimitRule): RateLimitResul
     resetAt: existing.resetAt,
     retryAfterSec: Math.max(1, Math.ceil((existing.resetAt - now) / 1000)),
   };
+}
+
+/**
+ * Forgets a bucket. Used to retire a failure counter once the user proves
+ * they're legitimate (a successful login), so an earlier run of typos never
+ * counts against someone who has since got it right.
+ */
+export function clearRateLimit(key: string): void {
+  store.delete(key);
 }
 
 /**
@@ -142,11 +164,25 @@ export function rateLimit(
   rule: RateLimitRule
 ): NextResponse | null {
   const ip = getClientIp(request);
-  const result = checkRateLimit(`${bucket}:${ip}`, rule);
+  return rateLimitByKey(`${bucket}:${ip}`, rule);
+}
+
+/**
+ * Same as `rateLimit`, but for buckets keyed by something other than the
+ * caller's IP — an account identifier, say. Callers build the whole key.
+ */
+export function rateLimitByKey(key: string, rule: RateLimitRule): NextResponse | null {
+  const result = checkRateLimit(key, rule);
   if (result.ok) return null;
 
   const response = NextResponse.json(
-    { error: "Too many requests. Please slow down and try again shortly." },
+    {
+      error: "Too many requests. Please slow down and try again shortly.",
+      // Stable identifier so the client can show this in the user's own
+      // language; `error` stays as the fallback for any caller that doesn't
+      // recognise the code.
+      code: "rate_limited",
+    },
     { status: 429 }
   );
   response.headers.set("Retry-After", String(result.retryAfterSec));

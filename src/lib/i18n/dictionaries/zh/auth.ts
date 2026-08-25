@@ -1,6 +1,11 @@
 import type { auth as enAuth } from "@/lib/i18n/dictionaries/en/auth";
 
 export const auth: typeof enAuth = {
+  errors: {
+    invalid_credentials: "電子郵件或密碼錯誤",
+    tenant_inactive: "此網站已停用，請聯絡客服。",
+    rate_limited: "嘗試次數過多，請稍待一分鐘後再試。",
+  },
   login: {
     subtitle: "登入您的管理後台",
     email: "電子郵件",
@@ -16,6 +21,8 @@ export const auth: typeof enAuth = {
     email: "電子郵件",
     submit: "傳送重設連結",
     genericSuccess: "如果此電子郵件對應一個帳號，我們已寄出重設密碼的連結。",
+    mailNotConfigured:
+      "此環境尚未設定電子郵件寄送功能，因此不會收到重設連結。請聯絡網站管理者協助重設密碼。",
     backToLogin: "返回登入",
   },
   resetPassword: {
@@ -29,10 +36,13 @@ export const auth: typeof enAuth = {
     goToLogin: "前往登入",
   },
   verifyEmail: {
+    confirmPrompt: "請確認這是您的電子郵件地址，以完成驗證。",
+    confirmButton: "驗證我的電子郵件",
     verifying: "正在驗證您的電子郵件...",
     success: "您的電子郵件已驗證成功。",
     invalidToken: "此驗證連結無效或已過期。",
     continueToAdmin: "前往管理後台",
+    missingToken: "此連結缺少驗證碼。",
   },
   signup: {
     subtitle: "建立您的線上訂餐網站",
