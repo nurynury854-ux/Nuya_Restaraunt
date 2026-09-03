@@ -16,4 +16,4 @@ export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
 export const TIME_SLOT_METHODS = ["PICKUP", "DELIVERY"] as const;
 export type TimeSlotMethod = (typeof TIME_SLOT_METHODS)[number];
 
-export const PLATFORM_NAME = "Bogi";
+export const PLATFORM_NAME = "Nuya";

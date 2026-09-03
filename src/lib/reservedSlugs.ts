@@ -11,6 +11,9 @@ export const RESERVED_SLUGS = new Set([
   "signup",
   "signin",
   "register",
+  "forgot-password",
+  "reset-password",
+  "verify-email",
   "app",
   "www",
   "assets",
@@ -23,6 +26,8 @@ export const RESERVED_SLUGS = new Set([
   "terms",
   "privacy",
   "favicon.ico",
+  // The platform's own name — a tenant here would impersonate it.
+  "nuya",
 ]);
 
 const SLUG_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/;

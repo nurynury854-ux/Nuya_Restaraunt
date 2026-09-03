@@ -1,4 +1,4 @@
-# Bogi — Multi-Tenant Online Ordering Platform
+# Nuya — Multi-Tenant Online Ordering Platform
 
 A self-serve platform where any food business can sign up, get their own online ordering site at `yourdomain.com/{their-slug}`, and fully run it themselves — menu, locations, live orders, branding — with no intervention needed from the platform owner.
 
@@ -24,7 +24,7 @@ This started as a single-restaurant demo and was rebuilt into a real multi-tenan
    - `PLATFORM_ADMIN_EMAIL` — the email you'll log in with.
    - `PLATFORM_ADMIN_PASSWORD` — any strong password.
    - `PLATFORM_SESSION_SECRET` — another long random string, generated the same way as `SESSION_SECRET` (`openssl rand -hex 32`) — keep it different from `SESSION_SECRET` so a leak of one can't be used to forge the other. Until these three are set, `/platform-admin` has no valid credentials and login always fails.
-5. **`RESEND_API_KEY`** (needed for email verification / password reset — see below) — create a free account at [resend.com](https://resend.com) and generate an API key. Without a verified sending domain (`EMAIL_FROM` + a domain added under Resend → Domains), mail can only reach the Resend account's own inbox — fine for testing solo, not for real tenants signing up. Add a custom domain in Resend whenever you're ready and point `EMAIL_FROM` at it (e.g. `Bogi <noreply@yourdomain.com>`); every verify/reset link is already built from the request's own origin, so no other code or config needs to change.
+5. **`RESEND_API_KEY`** (needed for email verification / password reset — see below) — create a free account at [resend.com](https://resend.com) and generate an API key. Without a verified sending domain (`EMAIL_FROM` + a domain added under Resend → Domains), mail can only reach the Resend account's own inbox — fine for testing solo, not for real tenants signing up. Add a custom domain in Resend whenever you're ready and point `EMAIL_FROM` at it (e.g. `Nuya <noreply@yourdomain.com>`); every verify/reset link is already built from the request's own origin, so no other code or config needs to change.
 6. **Set up the database schema once**, from your own computer:
    ```bash
    npm install

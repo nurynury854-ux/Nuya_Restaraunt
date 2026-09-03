@@ -21,7 +21,7 @@ export function getResendClient(): Resend {
  * verified inbox, not arbitrary recipients. Override via EMAIL_FROM once a
  * sending domain is verified (see README).
  */
-export const EMAIL_FROM = process.env.EMAIL_FROM || "Bogi <onboarding@resend.dev>";
+export const EMAIL_FROM = process.env.EMAIL_FROM || "Nuya <onboarding@resend.dev>";
 
 /**
  * Whether this deployment can actually deliver mail to an arbitrary address.
