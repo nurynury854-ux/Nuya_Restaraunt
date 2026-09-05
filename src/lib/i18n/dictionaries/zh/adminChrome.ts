@@ -3,6 +3,7 @@ import type { adminChrome as enAdminChrome } from "@/lib/i18n/dictionaries/en/ad
 export const adminChrome: typeof enAdminChrome = {
   topBar: {
     logOut: "登出",
+    copySiteUrl: "複製您的網站連結",
   },
   nav: {
     dashboard: "儀表板",

@@ -1,6 +1,7 @@
 import { getAdminSession } from "@/lib/adminAuth";
 import { getTenantBySlug } from "@/lib/tenant";
 import { getServerDictionary } from "@/lib/i18n/getServerDictionary";
+import { getSiteOrigin } from "@/lib/siteOrigin";
 import { AdminTopBar } from "@/components/admin/AdminTopBar";
 import { TenantSettingsForm } from "@/components/admin/settings/TenantSettingsForm";
 
@@ -12,10 +13,11 @@ export default async function TenantSettingsPage({
   params: Promise<{ tenantSlug: string }>;
 }) {
   const { tenantSlug } = await params;
-  const [tenant, session, { dict }] = await Promise.all([
+  const [tenant, session, { dict }, origin] = await Promise.all([
     getTenantBySlug(tenantSlug),
     getAdminSession(),
     getServerDictionary(),
+    getSiteOrigin(),
   ]);
 
   return (
@@ -25,6 +27,7 @@ export default async function TenantSettingsPage({
         businessName={tenant!.businessName}
         logoUrl={tenant!.logoUrl}
         email={session?.email ?? ""}
+        siteUrl={`${origin}/${tenantSlug}`}
       />
       <div className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6">
         <h1 className="mb-5 font-[family-name:var(--font-display)] text-2xl font-bold text-ink-900">

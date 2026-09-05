@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { LogOut } from "lucide-react";
+import { useState } from "react";
+import { Check, Copy, LogOut } from "lucide-react";
 import { useDictionary } from "@/components/i18n/LocaleProvider";
 import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
 
@@ -11,17 +12,30 @@ export function AdminTopBar({
   businessName,
   logoUrl,
   email,
+  siteUrl,
   branchName,
 }: {
   tenantSlug: string;
   businessName: string;
   logoUrl?: string | null;
   email: string;
+  /** The tenant's own ordering-site URL (`{origin}/{tenantSlug}`), for the copy-link button. */
+  siteUrl: string;
   branchName?: string;
 }) {
   const router = useRouter();
   const { dict } = useDictionary();
   const t = dict.adminChrome.topBar;
+
+  const [copied, setCopied] = useState(false);
+
+  const siteUrlDisplay = siteUrl.replace(/^https?:\/\//, "");
+
+  async function handleCopySiteUrl() {
+    await navigator.clipboard.writeText(siteUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  }
 
   async function handleLogout() {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -45,6 +59,18 @@ export function AdminTopBar({
         )}
       </Link>
       <div className="flex items-center gap-3">
+        <button
+          onClick={handleCopySiteUrl}
+          title={t.copySiteUrl}
+          className="hidden max-w-[220px] cursor-pointer items-center gap-1.5 rounded-lg border border-ink-100 bg-white px-2.5 py-1 text-xs text-ink-500 transition-colors hover:border-brand-300 hover:text-brand-600 sm:flex"
+        >
+          <span className="truncate">{siteUrlDisplay}</span>
+          {copied ? (
+            <Check className="size-3.5 shrink-0 text-success-600" />
+          ) : (
+            <Copy className="size-3.5 shrink-0" />
+          )}
+        </button>
         <span className="hidden text-xs text-ink-400 sm:inline">{email}</span>
         <LanguageSwitcher />
         <button

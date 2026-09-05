@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getAdminSession } from "@/lib/adminAuth";
 import { getTenantBySlug } from "@/lib/tenant";
+import { getSiteOrigin } from "@/lib/siteOrigin";
 import { AdminTopBar } from "@/components/admin/AdminTopBar";
 import { BranchNav } from "@/components/admin/BranchNav";
 import { NewOrderNotifier } from "@/components/admin/NewOrderNotifier";
@@ -16,10 +17,11 @@ export default async function BranchPanelLayout({
   params: Promise<{ tenantSlug: string; branchId: string }>;
 }) {
   const { tenantSlug, branchId } = await params;
-  const [tenant, branch, session] = await Promise.all([
+  const [tenant, branch, session, origin] = await Promise.all([
     getTenantBySlug(tenantSlug),
     prisma.branch.findUnique({ where: { id: branchId } }),
     getAdminSession(),
+    getSiteOrigin(),
   ]);
 
   // The proxy already confirms the session belongs to this tenant slug, but
@@ -44,6 +46,7 @@ export default async function BranchPanelLayout({
         businessName={tenant.businessName}
         logoUrl={tenant.logoUrl}
         email={session?.email ?? ""}
+        siteUrl={`${origin}/${tenantSlug}`}
         branchName={branch.name}
       />
       {admin && !admin.emailVerified && <EmailVerifyBanner email={session!.email} />}

@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { getAdminSession } from "@/lib/adminAuth";
 import { getTenantBySlug } from "@/lib/tenant";
 import { getServerDictionary } from "@/lib/i18n/getServerDictionary";
+import { getSiteOrigin } from "@/lib/siteOrigin";
 import { AdminBranchCards } from "@/components/admin/AdminBranchCards";
 import { AdminTopBar } from "@/components/admin/AdminTopBar";
 import { EmailVerifyBanner } from "@/components/admin/EmailVerifyBanner";
@@ -16,10 +17,11 @@ export default async function AdminBranchSelectPage({
   params: Promise<{ tenantSlug: string }>;
 }) {
   const { tenantSlug } = await params;
-  const [tenant, session, { dict }] = await Promise.all([
+  const [tenant, session, { dict }, origin] = await Promise.all([
     getTenantBySlug(tenantSlug),
     getAdminSession(),
     getServerDictionary(),
+    getSiteOrigin(),
   ]);
   const t = dict.adminChrome.branchSelect;
 
@@ -43,6 +45,7 @@ export default async function AdminBranchSelectPage({
         businessName={tenant!.businessName}
         logoUrl={tenant!.logoUrl}
         email={session?.email ?? ""}
+        siteUrl={`${origin}/${tenantSlug}`}
       />
       {admin && !admin.emailVerified && <EmailVerifyBanner email={session!.email} />}
       <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col items-center px-5 py-14">

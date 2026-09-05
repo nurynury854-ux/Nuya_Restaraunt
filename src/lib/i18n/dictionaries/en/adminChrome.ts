@@ -1,6 +1,7 @@
 export const adminChrome = {
   topBar: {
     logOut: "Log Out",
+    copySiteUrl: "Copy your site's link",
   },
   nav: {
     dashboard: "Dashboard",
