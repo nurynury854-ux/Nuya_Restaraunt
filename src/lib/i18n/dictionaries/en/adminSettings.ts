@@ -23,6 +23,17 @@ export const adminSettings = {
     address: "Address",
     phone: "Phone",
     hours: "Hours",
+    bannerImage: "Banner photo",
+    bannerImageHint:
+      "Shown behind the location name on the customer ordering page, replacing the default color banner. JPG, PNG, WebP, or GIF · 5MB max.",
+    uploadBannerImage: "Upload photo",
+    replaceBannerImage: "Replace photo",
+    removeBannerImage: "Remove",
+    uploadFailed: "Upload failed",
+    cropTitle: "Crop your photo",
+    cropHint: "Drag to reposition, use the slider to zoom — this crop is exactly how it'll appear.",
+    cropCancel: "Cancel",
+    cropConfirm: "Use this crop",
     saveChanges: "Save Changes",
   },
   closures: {

@@ -95,6 +95,7 @@ export const branchUpdateSchema = z.object({
   address: z.string().trim().min(1).max(160).optional(),
   phone: z.string().trim().min(1).max(30).optional(),
   hours: z.string().trim().min(1).max(60).optional(),
+  bannerImageUrl: z.string().trim().url().max(600).nullable().optional(),
   isActive: z.boolean().optional(),
 });
 

@@ -16,8 +16,8 @@ datasource db {
 }
 
 model Tenant {
-  id           String    @id @default(cuid())
-  slug         String    @unique
+  id           String   @id @default(cuid())
+  slug         String   @unique
   businessName String
   logoUrl      String?
   accentColor  String?
@@ -26,10 +26,10 @@ model Tenant {
   /// tenant — closed-date checks in particular — must go through this
   /// instead of the server's own clock (UTC on Vercel), which otherwise
   /// disagrees with the tenant's actual calendar day for hours at a time.
-  timezone     String    @default("UTC")
-  isActive     Boolean   @default(true)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  timezone     String   @default("UTC")
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   adminUsers      AdminUser[]
   branches        Branch[]
@@ -73,16 +73,22 @@ model AuthToken {
 }
 
 model Branch {
-  id        String     @id @default(cuid())
-  tenantId  String
-  tenant    Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  name      String
-  address   String
-  phone     String
-  hours     String
-  isActive  Boolean    @default(true)
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  id             String   @id @default(cuid())
+  tenantId       String
+  tenant         Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name           String
+  address        String
+  phone          String
+  hours          String
+  /// Pre-cropped photo shown behind the branch name on the customer-facing
+  /// location card, replacing the old flat brand-color gradient banner for
+  /// this one branch. Cropping happens client-side before upload, so this is
+  /// already the exact image to display — no further cropping/positioning
+  /// logic needed at render time.
+  bannerImageUrl String?
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   timeSlots TimeSlot[]
   orders    Order[]
@@ -92,15 +98,15 @@ model Branch {
 }
 
 model MenuCategory {
-  id        String     @id @default(cuid())
+  id        String   @id @default(cuid())
   tenantId  String
-  tenant    Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   name      String
-  sortOrder Int        @default(0)
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  items     MenuItem[]
+  items MenuItem[]
 
   @@unique([tenantId, name])
 }
@@ -193,34 +199,34 @@ model TimeSlot {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  orders    Order[]
+  orders Order[]
 }
 
 /// diningMethod: "DINE_IN" | "PICKUP" | "DELIVERY"
 /// status: "PENDING" | "COMPLETED" | "CANCELLED"
 /// paymentMethod: "CASH" | "TRANSFER"
 model Order {
-  id              String      @id @default(cuid())
+  id              String    @id @default(cuid())
   tenantId        String
-  tenant          Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant          Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   orderNo         String
   branchId        String
-  branch          Branch      @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  branch          Branch    @relation(fields: [branchId], references: [id], onDelete: Restrict)
   diningMethod    String
-  status          String      @default("PENDING")
+  status          String    @default("PENDING")
   tableNumber     String?
   timeSlotId      String?
-  timeSlot        TimeSlot?   @relation(fields: [timeSlotId], references: [id], onDelete: SetNull)
+  timeSlot        TimeSlot? @relation(fields: [timeSlotId], references: [id], onDelete: SetNull)
   customerName    String
   customerPhone   String
   deliveryAddress String?
   notes           String?
   paymentMethod   String
   totalAmount     Int
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
-  items           OrderItem[]
+  items OrderItem[]
 
   @@unique([tenantId, orderNo])
   @@index([tenantId, branchId])

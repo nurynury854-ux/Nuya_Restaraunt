@@ -24,6 +24,17 @@ export const adminSettings: typeof enAdminSettings = {
     address: "地址",
     phone: "電話",
     hours: "營業時間",
+    bannerImage: "橫幅照片",
+    bannerImageHint:
+      "顯示於顧客訂購頁面分店名稱後方，取代預設的顏色橫幅。JPG、PNG、WebP 或 GIF・最大 5MB。",
+    uploadBannerImage: "上傳照片",
+    replaceBannerImage: "更換照片",
+    removeBannerImage: "移除",
+    uploadFailed: "上傳失敗",
+    cropTitle: "裁切照片",
+    cropHint: "拖曳以移動位置，使用下方滑桿縮放——裁切結果就是最終顯示的樣子。",
+    cropCancel: "取消",
+    cropConfirm: "套用裁切",
     saveChanges: "儲存變更",
   },
   closures: {

@@ -51,7 +51,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Image must be under 5MB" }, { status: 400 });
     }
 
-    const kind = form.get("kind") === "logo" ? "logo" : "items";
+    const kindParam = form.get("kind");
+    const kind = kindParam === "logo" ? "logo" : kindParam === "banner" ? "banner" : "items";
     const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, "-");
     const pathname = `tenants/${session.tenantId}/${kind}/${Date.now()}-${safeName}`;
 

@@ -31,6 +31,7 @@ export interface SerializedBranch {
   address: string;
   phone: string;
   hours: string;
+  bannerImageUrl: string | null;
   isActive: boolean;
 }
 

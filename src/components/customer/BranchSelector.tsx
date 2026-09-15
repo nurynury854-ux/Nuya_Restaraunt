@@ -46,8 +46,19 @@ export function BranchSelector({
           transition={{ duration: 0.4, delay: i * 0.08, ease: [0.22, 1, 0.36, 1] }}
         >
           <Card className="flex h-full flex-col overflow-hidden">
-            <div className="relative h-24 bg-gradient-to-br from-brand-500 via-brand-400 to-gold-400 px-6 py-5">
-              <h2 className="font-[family-name:var(--font-display)] text-2xl font-bold text-white">
+            <div
+              className={`relative h-24 bg-cover bg-center px-6 py-5 ${
+                branch.bannerImageUrl ? "" : "bg-gradient-to-br from-brand-500 via-brand-400 to-gold-400"
+              }`}
+              style={
+                branch.bannerImageUrl
+                  ? {
+                      backgroundImage: `linear-gradient(to bottom right, rgba(0,0,0,0.4), rgba(0,0,0,0.15)), url(${branch.bannerImageUrl})`,
+                    }
+                  : undefined
+              }
+            >
+              <h2 className="relative font-[family-name:var(--font-display)] text-2xl font-bold text-white [text-shadow:0_1px_3px_rgba(0,0,0,0.35)]">
                 {branch.name}
               </h2>
             </div>
