@@ -17,3 +17,11 @@ export const TIME_SLOT_METHODS = ["PICKUP", "DELIVERY"] as const;
 export type TimeSlotMethod = (typeof TIME_SLOT_METHODS)[number];
 
 export const PLATFORM_NAME = "Nuya";
+
+// Billing. A tenant's own subscription to this platform — unrelated to
+// PAYMENT_METHODS above, which is how a diner pays the restaurant.
+export const SUBSCRIPTION_STATUSES = ["TRIALING", "ACTIVE", "PAST_DUE", "CANCELED"] as const;
+export type SubscriptionStatus = (typeof SUBSCRIPTION_STATUSES)[number];
+
+/** Length of the no-card-required trial every new tenant gets at signup. */
+export const TRIAL_DAYS = 14;

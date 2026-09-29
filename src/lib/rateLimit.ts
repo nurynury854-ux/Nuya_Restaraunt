@@ -95,6 +95,10 @@ export const RATE_LIMITS = {
   // Same shape as resetPassword: a 128-bit single-use token, so this is about
   // capping retries rather than stopping a guess.
   verifyEmail: { limit: 10, windowMs: 60_000 },
+  // Authenticated, but every call creates a Stripe object (a customer, a
+  // Checkout session, a portal session) and counts against Stripe's own API
+  // limits. A tenant subscribing needs one or two; a loop needs capping.
+  billing: { limit: 10, windowMs: 60_000 },
 } as const satisfies Record<string, RateLimitRule>;
 
 export function checkRateLimit(key: string, rule: RateLimitRule): RateLimitResult {

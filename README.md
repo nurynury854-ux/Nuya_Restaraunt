@@ -25,7 +25,9 @@ This started as a single-restaurant demo and was rebuilt into a real multi-tenan
    - `PLATFORM_ADMIN_PASSWORD` — any strong password.
    - `PLATFORM_SESSION_SECRET` — another long random string, generated the same way as `SESSION_SECRET` (`openssl rand -hex 32`) — keep it different from `SESSION_SECRET` so a leak of one can't be used to forge the other. Until these three are set, `/platform-admin` has no valid credentials and login always fails.
 5. **`RESEND_API_KEY`** (needed for email verification / password reset — see below) — create a free account at [resend.com](https://resend.com) and generate an API key. Without a verified sending domain (`EMAIL_FROM` + a domain added under Resend → Domains), mail can only reach the Resend account's own inbox — fine for testing solo, not for real tenants signing up. Add a custom domain in Resend whenever you're ready and point `EMAIL_FROM` at it (e.g. `Nuya <noreply@yourdomain.com>`); every verify/reset link is already built from the request's own origin, so no other code or config needs to change.
-6. **Set up the database schema once**, from your own computer:
+6. **`PAYMENT_INSTRUCTIONS`** — the bank-transfer details tenants see on their Billing page: bank, account name and number, and the price. Free text; line breaks are kept, so write it however you'd like it to read (both languages are fine in one block). Until it's set, the Billing page tells tenants to contact you. See [Billing](#billing-how-tenants-pay) below.
+
+7. **Set up the database schema once**, from your own computer:
    ```bash
    npm install
    ```
@@ -38,7 +40,9 @@ This started as a single-restaurant demo and was rebuilt into a real multi-tenan
    npm run db:setup
    ```
    This creates the tables and loads one example tenant (see below) so there's something to click through immediately.
-7. **Deploy.** The build runs `prisma generate` automatically.
+
+   **Upgrading an existing deployment?** After the schema push, run `npm run db:grandfather-billing` once. Tenants created before billing existed have no trial and were never approved, which would take their sites offline; this approves them with no end date. It's safe to re-run and won't resurrect anyone whose trial genuinely lapsed or whom you revoked.
+8. **Deploy.** The build runs `prisma generate` automatically.
 
 ### Demo tenant (seeded automatically)
 
@@ -68,7 +72,7 @@ A reserved-word list (`admin`, `login`, `signup`, `api`, etc.) prevents a tenant
 ### Email (verification + password reset)
 Signup fires off a best-effort "verify your email" email (via [Resend](https://resend.com)); a persistent banner in the admin panel offers to resend it until the admin clicks through. This is a nudge, not a gate — signup, login, and the admin panel all work before verifying, since this platform can't yet guarantee delivery to an arbitrary tenant's inbox without a verified sending domain (see the deploy steps above), and gating self-serve signup on that would risk locking new tenants out entirely.
 
-`/forgot-password` → `/reset-password` is a standard token-based flow: a random token is generated, only its SHA-256 hash is stored (`AuthToken`, `src/lib/authTokens.ts`), and it's single-use and short-lived (24h for verification links, 1h for reset links). Clicking a reset link also settles email verification, since it proves the same thing — that the admin controls that inbox. Not yet built: order-confirmation emails to customers (checkout only collects name + phone, no email field) and subscription/trial-related emails (there's no billing system yet).
+`/forgot-password` → `/reset-password` is a standard token-based flow: a random token is generated, only its SHA-256 hash is stored (`AuthToken`, `src/lib/authTokens.ts`), and it's single-use and short-lived (24h for verification links, 1h for reset links). Clicking a reset link also settles email verification, since it proves the same thing — that the admin controls that inbox. Not yet built: order-confirmation emails to customers (checkout only collects name + phone, no email field) and billing emails — trial-ending and payment-due nudges appear in the admin panel, but nothing is emailed yet.
 
 ### Tenant isolation
 This is the part that matters most in a multi-tenant app. Every admin session is signed with the tenant it belongs to; visiting another tenant's `/admin` URL redirects to login rather than leaking anything. Every API route re-derives the tenant from the authenticated session (never trusts a tenant id from the request) and filters every query by it, and every "fetch by id" admin action (edit a branch, update a menu item, etc.) explicitly checks the fetched record's `tenantId` before allowing the read/write — so even guessing another tenant's internal ID doesn't work. This was verified directly (created two tenants, confirmed one's session/API calls cannot see or modify the other's branches, menu, or orders).
@@ -85,10 +89,26 @@ The checkout success page links straight to a live status page for that order; c
 - **New order alert**: an on-screen banner + beep while an admin has any page of their panel open.
 - **Menu Management**: full add/edit/delete for categories and items, including photo upload per item, an availability toggle, and per-item **option groups** (size, spice level, add-ons — each with its own min/max selection rule and a price delta per choice). Shared across all of a tenant's locations.
 - **Locations**: add/edit locations (name, address, phone, hours), each with its own time slots; disable a location to hide it from ordering. Each location also has its own **closed-date list** (holidays, one-off closures) that blocks ordering for that date without touching the regular time slots.
-- **Site Settings**: business name, logo upload, and a brand accent color that actually re-themes that tenant's customer-facing site.
+- **Site Settings**: business name, tagline, logo upload, and an Appearance section that re-themes that tenant's customer-facing site — brand color, background color and style, heading font, and corner style, with one-click presets and a live preview.
+- **Billing**: trial / paid status, whether their site is currently live, and how to pay — their payment reference code and your bank-transfer details. See "Billing" below.
 
 ### Platform-admin dashboard (you, not tenants)
-At `/platform-admin`, gated by the `PLATFORM_ADMIN_EMAIL`/`PLATFORM_ADMIN_PASSWORD`/`PLATFORM_SESSION_SECRET` env vars above — completely separate login and session cookie from tenant admin accounts, so a compromised tenant login can never reach it. Lists every tenant (search by name/URL, paginated), with each row showing the owner's email, location count, order count, and signup date. Actions: suspend/reactivate a tenant (immediately blocks their admin login and their public site — a suspended owner is told their site is deactivated, rather than that their password is wrong, so they contact you instead of chasing a password reset), or permanently delete a tenant and everything under it (locations, menu, orders, admin accounts) — delete requires typing the tenant's slug to confirm.
+At `/platform-admin`, gated by the `PLATFORM_ADMIN_EMAIL`/`PLATFORM_ADMIN_PASSWORD`/`PLATFORM_SESSION_SECRET` env vars above — completely separate login and session cookie from tenant admin accounts, so a compromised tenant login can never reach it. Lists every tenant (search by name, URL or payment reference; paginated; a "Not yet paid" filter for tenants you haven't approved), with each row showing the owner's email, location count, order count, signup date, and billing status (trial / trial ended / paid / expired, the paid-through date, the payment reference, plus an explicit flag when a site is offline). Actions: approve a tenant or record a renewal once their bank transfer arrives (see "Billing" below), suspend/reactivate a tenant (immediately blocks their admin login and their public site — a suspended owner is told their site is deactivated, rather than that their password is wrong, so they contact you instead of chasing a password reset), or permanently delete a tenant and everything under it (locations, menu, orders, admin accounts) — delete requires typing the tenant's slug to confirm.
+
+### Billing (how tenants pay)
+Billing is **manual, by bank transfer**. New tenants get a **14-day free trial**, so they can build their menu and see their own site working before paying. After that, their public ordering site stays open only once you've received their payment and approved them in `/platform-admin`. They can pay early and you can approve them mid-trial; trial time and paid time both count.
+
+1. At signup each tenant is given a short **payment reference** (e.g. `NY-7KQ3MP`, `src/lib/paymentReference.ts`). Their Billing page shows it with their business name and your `PAYMENT_INSTRUCTIONS`, and asks them to put both in the transfer note.
+2. When a transfer arrives, find the tenant in `/platform-admin` (the "Not yet paid" filter, or search by the reference), check that the name and reference match, and click **Approve**. Set the **paid-through** date (quick picks for +1 month / +3 months / +1 year) or tick **No end date** for test and complimentary accounts, and optionally add a private note (amount, date, sender).
+3. For a renewal, click **Record payment** on the same row; the quick picks extend from the current paid-through date so no paid days are lost. **Revoke approval** undoes a mistake.
+
+The paid-through date is inclusive and follows the tenant's own timezone, so a tenant paid through the 30th stays live until midnight on the 30th *their* time. When a trial or paid period runs out, the **public ordering site closes, but the admin panel stays open**, so they can keep working and see how to pay. The admin panel shows a banner 3 days before a trial ends and 7 days before a paid period ends.
+
+To a diner, a closed storefront shows a neutral "temporarily unavailable" notice, never anything about the restaurant's payment status, and never a 404 (a 404 is reserved for slugs that don't exist and for tenants *you* have suspended). The one gate everything routes through is `isStorefrontOpen()` in `src/lib/billing.ts`.
+
+**Stripe is built but dormant.** `src/lib/stripe.ts`, `/api/billing/*` and `/api/stripe/webhook` are still here, but nothing in the UI starts a Checkout and the access check ignores the Stripe fields. To switch to self-serve card payments later, set `STRIPE_SECRET_KEY` / `STRIPE_PRICE_ID` / `STRIPE_WEBHOOK_SECRET`, count an `ACTIVE`/`PAST_DUE` `subscriptionStatus` as paid in `getBillingState()`, and add Subscribe / Manage billing buttons back to the Billing page.
+
+Not yet built: billing emails (nudges are in-app only), a payment history (only the latest paid-through date and a free-text note are kept), and local invoicing — if you're selling into Taiwan, domestic sales require government e-invoices (電子發票), which would need a separate provider.
 
 ### Live updates
 New orders, order status changes, time-slot edits, and menu changes all propagate automatically — no manual refresh anywhere. Every screen quietly re-checks the database every few seconds (~4s on the admin order boards/alert, ~8–10s elsewhere) and pauses while the tab is in the background. This polling approach (rather than a persistent push connection) is what makes it work reliably on Vercel's serverless hosting.
@@ -106,10 +126,11 @@ This is a hand-rolled dictionary system, not `next-intl` or Next's built-in i18n
 ## Known simplifications (demo/early-product scope)
 
 - One admin account = one tenant (no multi-business logins yet).
-- Email verification is a nudge, not an enforced gate (see "Email" above) — and without a verified sending domain, mail can currently only reach the Resend account's own inbox, not real tenants. No order-confirmation emails to customers or subscription/trial emails yet.
+- Email verification is a nudge, not an enforced gate (see "Email" above) — and without a verified sending domain, mail can currently only reach the Resend account's own inbox, not real tenants. No order-confirmation emails to customers, and no billing emails (trial-ending / payment-due nudges are in-app only).
 - Time slots are a recurring daily list, not tied to a specific calendar date (closed-date overrides exist, but there's no way to give a single date different hours yet).
 - Option groups (modifiers) belong to one menu item each — there's no shared/reusable library, so a business re-creates a similar group (e.g. "Spice Level") on every item that needs it.
-- "Bank Transfer" payment shows a clearly-labeled empty QR placeholder — no real payment processing is wired up.
+- "Bank Transfer" at *customer* checkout shows a clearly-labeled empty QR placeholder — diners still pay the restaurant directly in cash or by transfer, and no diner payment is processed by this platform. (Tenants paying *you* for the platform is a separate, manual process — see "Billing".)
+- Billing is manual: you match bank transfers to accounts yourself and set each tenant's paid-through date by hand.
 - Live updates are polling-based (a few seconds of latency), not instant push.
 - Translation covers static UI text only — server-generated error/validation messages stay in English regardless of locale (see "Language" above).
 
@@ -121,7 +142,7 @@ npm run db:setup   # first time only — creates tables + demo tenant
 npm run dev
 ```
 
-Requires a `.env` with `DATABASE_URL` (Postgres) and `SESSION_SECRET`; add `BLOB_READ_WRITE_TOKEN` too if you want image uploads to work locally (from a Vercel Blob store, same as production).
+Requires a `.env` with `DATABASE_URL` (Postgres) and `SESSION_SECRET`; add `BLOB_READ_WRITE_TOKEN` too if you want image uploads to work locally (from a Vercel Blob store, same as production), and `PAYMENT_INSTRUCTIONS` if you want the Billing page to show real transfer details.
 
 ## Project structure
 

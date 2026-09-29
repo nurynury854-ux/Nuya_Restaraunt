@@ -4,6 +4,11 @@ export interface SerializedTenant {
   businessName: string;
   logoUrl: string | null;
   accentColor: string | null;
+  backgroundColor: string | null;
+  backgroundStyle: string;
+  headingFont: string;
+  cornerStyle: string;
+  tagline: string | null;
   timezone: string;
   isActive: boolean;
 }

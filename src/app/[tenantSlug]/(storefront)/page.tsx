@@ -36,6 +36,9 @@ export default async function TenantHomePage({
           <h1 className="font-[family-name:var(--font-display)] text-4xl font-bold text-ink-900 sm:text-5xl">
             {tenant.businessName}
           </h1>
+          {tenant.tagline && (
+            <p className="max-w-lg text-base text-ink-700 sm:text-lg">{tenant.tagline}</p>
+          )}
           <p className="max-w-md text-sm text-ink-500 sm:text-base">{t.chooseLocation}</p>
         </div>
 

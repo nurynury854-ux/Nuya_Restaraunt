@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getTenantBySlug, isTenantUsable } from "@/lib/tenant";
+import { getTenantBySlug } from "@/lib/tenant";
+import { isStorefrontOpen } from "@/lib/billing";
 import { todayPartsInTimezone, dateOnlyUTC } from "@/lib/timezone";
 
 export const dynamic = "force-dynamic";
@@ -13,7 +14,7 @@ export async function GET(request: NextRequest) {
   }
 
   const tenant = await getTenantBySlug(slug);
-  if (!isTenantUsable(tenant)) {
+  if (!isStorefrontOpen(tenant)) {
     return NextResponse.json({ error: "Store not found" }, { status: 404 });
   }
 

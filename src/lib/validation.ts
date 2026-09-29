@@ -6,6 +6,13 @@ import {
   ORDER_STATUSES,
 } from "@/lib/constants";
 import { isValidTimezone } from "@/lib/timezone";
+import { HEX_COLOR_REGEX } from "@/lib/color";
+import {
+  BACKGROUND_STYLES,
+  CORNER_STYLES,
+  HEADING_FONTS,
+  isReadableBackground,
+} from "@/lib/theme";
 
 const timezoneSchema = z
   .string()
@@ -106,9 +113,20 @@ export const tenantSettingsUpdateSchema = z.object({
   accentColor: z
     .string()
     .trim()
-    .regex(/^#[0-9a-fA-F]{6}$/, "Use a hex color like #C8722E")
+    .regex(HEX_COLOR_REGEX, "Use a hex color like #C8722E")
     .nullable()
     .optional(),
+  tagline: z.string().trim().max(120).nullable().optional(),
+  backgroundColor: z
+    .string()
+    .trim()
+    .regex(HEX_COLOR_REGEX, "Use a hex color like #FBF4E7")
+    .refine(isReadableBackground, "That background is too dark for text to stay readable")
+    .nullable()
+    .optional(),
+  backgroundStyle: z.enum(BACKGROUND_STYLES).optional(),
+  headingFont: z.enum(HEADING_FONTS).optional(),
+  cornerStyle: z.enum(CORNER_STYLES).optional(),
 });
 
 export const categoryCreateSchema = z.object({
@@ -208,7 +226,20 @@ export const checkSlugSchema = z.object({
 });
 
 export const platformTenantUpdateSchema = z.object({
-  isActive: z.boolean(),
+  isActive: z.boolean().optional(),
+  /** Approve the tenant / record a bank-transfer payment. */
+  payment: z
+    .object({
+      /** Last paid day, inclusive, as a date-input value. Null = no end date. */
+      paidThrough: z
+        .string()
+        .regex(/^\d{4}-\d{2}-\d{2}$/, "Pick a date")
+        .nullable(),
+      billingNote: z.string().trim().max(500).nullable().optional(),
+    })
+    .optional(),
+  /** Undo an approval made by mistake. The trial, if any is left, still counts. */
+  revokeApproval: z.literal(true).optional(),
 });
 
 export const forgotPasswordSchema = z.object({

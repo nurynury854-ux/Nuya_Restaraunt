@@ -5,7 +5,8 @@ import { handleApiError } from "@/lib/apiResponse";
 import { createOrderSchema } from "@/lib/validation";
 import { generateOrderNumber } from "@/lib/orderNumber";
 import { PENDING_STATUSES, COMPLETED_STATUSES } from "@/lib/constants";
-import { getTenantBySlug, isTenantUsable } from "@/lib/tenant";
+import { getTenantBySlug } from "@/lib/tenant";
+import { isStorefrontOpen } from "@/lib/billing";
 import { rateLimit, enforceBodyLimit, RATE_LIMITS, BODY_LIMITS } from "@/lib/rateLimit";
 import { todayPartsInTimezone, dateOnlyUTC } from "@/lib/timezone";
 
@@ -20,7 +21,7 @@ export async function POST(request: NextRequest) {
     const data = createOrderSchema.parse(body);
 
     const tenant = await getTenantBySlug(data.tenantSlug);
-    if (!isTenantUsable(tenant)) {
+    if (!isStorefrontOpen(tenant)) {
       return NextResponse.json({ error: "Store not found" }, { status: 404 });
     }
     const tenantId = tenant!.id;

@@ -1,6 +1,10 @@
 import type { customer as enCustomer } from "@/lib/i18n/dictionaries/en/customer";
 
 export const customer: typeof enCustomer = {
+  storefrontClosed: {
+    heading: "此訂購頁面暫時無法使用",
+    body: "線上訂購目前暫停中。請稍後再回來查看，或直接與餐廳聯絡。",
+  },
   branchSelect: {
     orderOnline: "線上點餐",
     chooseLocation: "選擇門市與您想要的取餐方式",

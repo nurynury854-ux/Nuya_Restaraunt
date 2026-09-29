@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { getTenantBySlug, isTenantUsable } from "@/lib/tenant";
+import { getTenantBySlug } from "@/lib/tenant";
+import { isStorefrontOpen } from "@/lib/billing";
 import { OrderStatusView } from "@/components/customer/OrderStatusView";
 
 export const dynamic = "force-dynamic";
@@ -12,7 +13,7 @@ export default async function OrderStatusPage({
 }) {
   const { tenantSlug, orderId } = await params;
   const tenant = await getTenantBySlug(tenantSlug);
-  if (!isTenantUsable(tenant)) notFound();
+  if (!isStorefrontOpen(tenant)) notFound();
 
   const order = await prisma.order.findUnique({
     where: { id: orderId },

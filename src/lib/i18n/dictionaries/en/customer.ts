@@ -1,4 +1,8 @@
 export const customer = {
+  storefrontClosed: {
+    heading: "This ordering page is temporarily unavailable",
+    body: "Online ordering is paused right now. Please check back soon, or contact the restaurant directly.",
+  },
   branchSelect: {
     orderOnline: "Order Online",
     chooseLocation: "Choose a location and how you'd like to order",

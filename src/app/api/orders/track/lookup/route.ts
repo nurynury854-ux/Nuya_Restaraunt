@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { handleApiError } from "@/lib/apiResponse";
 import { orderLookupSchema } from "@/lib/validation";
-import { getTenantBySlug, isTenantUsable } from "@/lib/tenant";
+import { getTenantBySlug } from "@/lib/tenant";
+import { isStorefrontOpen } from "@/lib/billing";
 import { rateLimit, enforceBodyLimit, RATE_LIMITS, BODY_LIMITS } from "@/lib/rateLimit";
 
 function digitsOnly(s: string): string {
@@ -27,7 +28,7 @@ export async function POST(request: NextRequest) {
     const data = orderLookupSchema.parse(body);
 
     const tenant = await getTenantBySlug(data.tenantSlug);
-    if (!isTenantUsable(tenant)) {
+    if (!isStorefrontOpen(tenant)) {
       return NextResponse.json({ error: "Order not found" }, { status: 404 });
     }
 

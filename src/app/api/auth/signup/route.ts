@@ -7,6 +7,8 @@ import { isSlugAllowed } from "@/lib/reservedSlugs";
 import { ADMIN_SESSION_COOKIE, signAdminSession } from "@/lib/session";
 import { rateLimit, enforceBodyLimit, RATE_LIMITS, BODY_LIMITS } from "@/lib/rateLimit";
 import { sendVerificationEmail } from "@/lib/email/authEmails";
+import { trialEndDateFrom } from "@/lib/billing";
+import { generatePaymentReference } from "@/lib/paymentReference";
 
 export async function POST(request: NextRequest) {
   try {
@@ -39,7 +41,16 @@ export async function POST(request: NextRequest) {
 
     const { tenant, admin } = await prisma.$transaction(async (tx) => {
       const tenant = await tx.tenant.create({
-        data: { slug, businessName: data.businessName, timezone: data.timezone ?? "UTC" },
+        data: {
+          slug,
+          businessName: data.businessName,
+          timezone: data.timezone ?? "UTC",
+          // Free trial: the storefront is live from the first minute so they
+          // can see their own site working before being asked to pay. After
+          // it ends, the platform owner approves them once payment arrives.
+          trialEndsAt: trialEndDateFrom(),
+          paymentReference: generatePaymentReference(),
+        },
       });
       await tx.branch.create({
         data: {

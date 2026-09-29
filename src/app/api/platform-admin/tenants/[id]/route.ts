@@ -4,6 +4,9 @@ import { requirePlatformSession } from "@/lib/platformAuth";
 import { NotFoundError } from "@/lib/adminAuth";
 import { handleApiError } from "@/lib/apiResponse";
 import { platformTenantUpdateSchema } from "@/lib/validation";
+import { parseCalendarDate } from "@/lib/billing";
+import { ensurePaymentReference } from "@/lib/paymentReference";
+import type { Prisma } from "@/generated/prisma/client";
 
 export async function PATCH(
   request: NextRequest,
@@ -13,10 +16,35 @@ export async function PATCH(
     await requirePlatformSession();
     const { id } = await params;
     const body = await request.json();
-    const data = platformTenantUpdateSchema.parse(body);
+    const input = platformTenantUpdateSchema.parse(body);
 
     const existing = await prisma.tenant.findUnique({ where: { id } });
     if (!existing) throw new NotFoundError();
+
+    const data: Prisma.TenantUpdateInput = {};
+    if (input.isActive !== undefined) data.isActive = input.isActive;
+
+    if (input.revokeApproval) {
+      data.approvedAt = null;
+      data.paidThrough = null;
+      // A tenant from before billing has no trial date at all; stamp an
+      // already-ended one so prisma/grandfatherBilling.ts (which matches
+      // "never approved, no trial date") can't re-approve them on a re-run.
+      data.trialEndsAt = existing.trialEndsAt ?? new Date();
+    } else if (input.payment) {
+      // Recording a payment is what approves a tenant. Keep the original
+      // approval date on later renewals so it still says when they first paid.
+      data.approvedAt = existing.approvedAt ?? new Date();
+      data.paidThrough = input.payment.paidThrough
+        ? parseCalendarDate(input.payment.paidThrough)
+        : null;
+      if (input.payment.billingNote !== undefined) {
+        data.billingNote = input.payment.billingNote || null;
+      }
+      // Older tenants predate references; give them one now so it's on
+      // record next to the payment it was matched against.
+      await ensurePaymentReference(existing);
+    }
 
     const tenant = await prisma.tenant.update({ where: { id }, data });
     return NextResponse.json({ tenant });

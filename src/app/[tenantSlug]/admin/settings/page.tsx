@@ -29,7 +29,7 @@ export default async function TenantSettingsPage({
         email={session?.email ?? ""}
         siteUrl={`${origin}/${tenantSlug}`}
       />
-      <div className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6">
+      <div className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6">
         <h1 className="mb-5 font-[family-name:var(--font-display)] text-2xl font-bold text-ink-900">
           {dict.adminSettings.tenantSettings.heading}
         </h1>

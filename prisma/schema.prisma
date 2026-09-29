@@ -16,20 +16,76 @@ datasource db {
 }
 
 model Tenant {
-  id           String   @id @default(cuid())
-  slug         String   @unique
-  businessName String
-  logoUrl      String?
-  accentColor  String?
+  id              String  @id @default(cuid())
+  slug            String  @unique
+  businessName    String
+  logoUrl         String?
+  accentColor     String?
+  /// Storefront appearance. See src/lib/theme.ts for the allowed values and
+  /// how each one maps onto the CSS theme variables; null / default values
+  /// mean "use the platform's standard warm look".
+  backgroundColor String?
+  /// "GLOW" | "SOLID" | "DOTS"
+  backgroundStyle String  @default("GLOW")
+  /// "CLASSIC" | "ELEGANT" | "MODERN" | "FRIENDLY"
+  headingFont     String  @default("CLASSIC")
+  /// "SHARP" | "SOFT" | "ROUNDED"
+  cornerStyle     String  @default("ROUNDED")
+  /// Short line shown under the business name on the storefront home page.
+  tagline         String?
   /// IANA timezone (e.g. "Asia/Ulaanbaatar") this business operates in.
   /// Everything that needs to know "what day is it right now" for this
   /// tenant — closed-date checks in particular — must go through this
   /// instead of the server's own clock (UTC on Vercel), which otherwise
   /// disagrees with the tenant's actual calendar day for hours at a time.
-  timezone     String   @default("UTC")
-  isActive     Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  timezone        String  @default("UTC")
+  /// Platform-side suspension (abuse, chargebacks). Deliberately separate from
+  /// the billing fields below: a tenant suspended by the platform must not come
+  /// back to life just because a payment was recorded, and a tenant whose paid
+  /// period ran out is not the same thing as one we've banned. `isActive:
+  /// false` hides the tenant entirely (404); an unpaid or unapproved tenant
+  /// shows a "temporarily unavailable" notice instead. See src/lib/billing.ts.
+  isActive        Boolean @default(true)
+
+  /// Manual billing — the live access check (see src/lib/billing.ts).
+  /// Every signup gets a free trial with a live storefront. Past the trial,
+  /// the storefront stays open only once the platform owner has received a
+  /// bank transfer and approved the tenant from /platform-admin (which they
+  /// can also do early, mid-trial). The admin panel is never closed.
+  trialEndsAt      DateTime?
+  /// When the platform owner first approved this tenant (first payment).
+  approvedAt       DateTime?
+  /// Last calendar day (inclusive, in the tenant's own timezone) the tenant
+  /// has paid for, stored as UTC midnight like BranchClosure.date. Null on an
+  /// approved tenant means no end date (comped / test accounts).
+  paidThrough      DateTime?
+  /// Short code the tenant puts in their bank-transfer note so the platform
+  /// owner can match a payment to an account. See src/lib/paymentReference.ts.
+  paymentReference String?   @unique
+  /// Platform owner's private note about payments (amount, date, sender).
+  /// Never shown to the tenant.
+  billingNote      String?
+
+  /// Stripe subscription billing — built but DORMANT. Nothing in the UI starts
+  /// a Checkout and the access check ignores these fields; they're kept so
+  /// self-serve card payments can be switched on later without a rebuild.
+  ///
+  /// "TRIALING" | "ACTIVE" | "PAST_DUE" | "CANCELED" — see SUBSCRIPTION_STATUSES.
+  /// Written ONLY by the Stripe webhook; never from the browser's return trip
+  /// out of Checkout, which is trivially forgeable.
+  subscriptionStatus   String    @default("TRIALING")
+  /// Stripe's id for this tenant's customer/subscription. Unique so a webhook
+  /// can resolve a tenant from the event alone, and so one Stripe object can
+  /// never be attached to two tenants.
+  stripeCustomerId     String?   @unique
+  stripeSubscriptionId String?   @unique
+  /// End of the paid period, mirrored from the subscription ITEM (Stripe moved
+  /// current_period_end off the subscription object). Display only — never the
+  /// access check, which trusts subscriptionStatus.
+  currentPeriodEnd     DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   adminUsers      AdminUser[]
   branches        Branch[]

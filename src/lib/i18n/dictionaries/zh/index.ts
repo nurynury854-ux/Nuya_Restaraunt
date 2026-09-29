@@ -13,6 +13,7 @@ import { adminSettings } from "./adminSettings";
 import { adminKitchen } from "./adminKitchen";
 import { platformAdmin } from "./platformAdmin";
 import { email } from "./email";
+import { billing } from "./billing";
 
 export const zh: Dictionary = {
   common,
@@ -29,4 +30,5 @@ export const zh: Dictionary = {
   adminKitchen,
   platformAdmin,
   email,
+  billing,
 };

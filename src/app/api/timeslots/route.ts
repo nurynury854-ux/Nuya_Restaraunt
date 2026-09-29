@@ -3,7 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { assertTenantOwns, requireAdminSession } from "@/lib/adminAuth";
 import { handleApiError } from "@/lib/apiResponse";
 import { timeSlotCreateSchema } from "@/lib/validation";
-import { getTenantBySlug, isTenantUsable } from "@/lib/tenant";
+import { getTenantBySlug } from "@/lib/tenant";
+import { isStorefrontOpen } from "@/lib/billing";
 
 export async function GET(request: NextRequest) {
   const params = request.nextUrl.searchParams;
@@ -25,7 +26,7 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: "Missing tenant" }, { status: 400 });
       }
       const tenant = await getTenantBySlug(slug);
-      if (!isTenantUsable(tenant)) {
+      if (!isStorefrontOpen(tenant)) {
         return NextResponse.json({ error: "Store not found" }, { status: 404 });
       }
       tenantId = tenant!.id;
