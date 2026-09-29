@@ -125,3 +125,35 @@ export function parseCalendarDate(value: string): Date {
 export function formatCalendarDate(date: Date): string {
   return date.toISOString().slice(0, 10);
 }
+
+export type SubscriptionNotice = "TRIAL_ENDING" | "TRIAL_ENDED" | "PAID_ENDING" | "EXPIRED";
+
+const TRIAL_WARNING_DAYS = 3;
+const PAID_WARNING_DAYS = 7;
+
+/**
+ * Which notice (if any) a tenant should see, and the day count it quotes.
+ * Exported so the server component decides once and the banner stays
+ * presentational.
+ */
+export function subscriptionNoticeFor(tenant: {
+  state: BillingState;
+  trialDaysLeft: number;
+  /** Null when there's no paid end date to count down to. */
+  paidDaysLeft: number | null;
+}): { notice: SubscriptionNotice; daysLeft: number } | null {
+  switch (tenant.state) {
+    case "TRIAL_ENDED":
+      return { notice: "TRIAL_ENDED", daysLeft: 0 };
+    case "EXPIRED":
+      return { notice: "EXPIRED", daysLeft: 0 };
+    case "TRIAL":
+      return tenant.trialDaysLeft <= TRIAL_WARNING_DAYS
+        ? { notice: "TRIAL_ENDING", daysLeft: tenant.trialDaysLeft }
+        : null;
+    case "PAID":
+      return tenant.paidDaysLeft !== null && tenant.paidDaysLeft <= PAID_WARNING_DAYS
+        ? { notice: "PAID_ENDING", daysLeft: tenant.paidDaysLeft }
+        : null;
+  }
+}

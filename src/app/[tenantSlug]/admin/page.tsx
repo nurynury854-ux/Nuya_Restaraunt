@@ -1,16 +1,18 @@
 import { prisma } from "@/lib/prisma";
 import { getAdminSession } from "@/lib/adminAuth";
 import { getTenantBySlug } from "@/lib/tenant";
-import { getBillingState, paidDaysRemaining, trialDaysRemaining } from "@/lib/billing";
+import {
+  getBillingState,
+  paidDaysRemaining,
+  subscriptionNoticeFor,
+  trialDaysRemaining,
+} from "@/lib/billing";
 import { getServerDictionary } from "@/lib/i18n/getServerDictionary";
 import { getSiteOrigin } from "@/lib/siteOrigin";
 import { AdminBranchCards } from "@/components/admin/AdminBranchCards";
 import { AdminTopBar } from "@/components/admin/AdminTopBar";
 import { EmailVerifyBanner } from "@/components/admin/EmailVerifyBanner";
-import {
-  SubscriptionBanner,
-  subscriptionNoticeFor,
-} from "@/components/admin/SubscriptionBanner";
+import { SubscriptionBanner } from "@/components/admin/SubscriptionBanner";
 import Link from "next/link";
 import { Settings, CreditCard } from "lucide-react";
 

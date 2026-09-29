@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useDictionary } from "@/components/i18n/LocaleProvider";
 import { formatMessage } from "@/lib/i18n/format";
-import type { BillingState } from "@/lib/billing";
+import type { SubscriptionNotice } from "@/lib/billing";
 
 /**
  * The nudge that carries a tenant from "my site works" to "I should pay for
@@ -12,13 +12,11 @@ import type { BillingState } from "@/lib/billing";
  *
  * Deliberately quiet most of the time — a banner shown every day stops being
  * read by the time it matters. It appears when a trial or paid period is
- * about to run out, and stays up once the site is offline.
+ * about to run out, and stays up once the site is offline. Which notice to
+ * show is decided server-side by `subscriptionNoticeFor` in src/lib/billing.ts
+ * — it can't live in this file, since a "use client" module's exports can't
+ * be called from a server component.
  */
-export type SubscriptionNotice = "TRIAL_ENDING" | "TRIAL_ENDED" | "PAID_ENDING" | "EXPIRED";
-
-const TRIAL_WARNING_DAYS = 3;
-const PAID_WARNING_DAYS = 7;
-
 export function SubscriptionBanner({
   notice,
   daysLeft,
@@ -59,31 +57,4 @@ export function SubscriptionBanner({
       </Link>
     </div>
   );
-}
-
-/**
- * Which notice (if any) a tenant should see, and the day count it quotes.
- * Exported so the server component decides once and the banner stays
- * presentational.
- */
-export function subscriptionNoticeFor(tenant: {
-  state: BillingState;
-  trialDaysLeft: number;
-  /** Null when there's no paid end date to count down to. */
-  paidDaysLeft: number | null;
-}): { notice: SubscriptionNotice; daysLeft: number } | null {
-  switch (tenant.state) {
-    case "TRIAL_ENDED":
-      return { notice: "TRIAL_ENDED", daysLeft: 0 };
-    case "EXPIRED":
-      return { notice: "EXPIRED", daysLeft: 0 };
-    case "TRIAL":
-      return tenant.trialDaysLeft <= TRIAL_WARNING_DAYS
-        ? { notice: "TRIAL_ENDING", daysLeft: tenant.trialDaysLeft }
-        : null;
-    case "PAID":
-      return tenant.paidDaysLeft !== null && tenant.paidDaysLeft <= PAID_WARNING_DAYS
-        ? { notice: "PAID_ENDING", daysLeft: tenant.paidDaysLeft }
-        : null;
-  }
 }
