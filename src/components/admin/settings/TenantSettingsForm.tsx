@@ -2,7 +2,7 @@
 
 import { useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { Upload, CheckCircle2 } from "lucide-react";
+import { Upload, CheckCircle2, Monitor, Smartphone } from "lucide-react";
 import type { SerializedTenant } from "@/lib/types";
 import { useDictionary } from "@/components/i18n/LocaleProvider";
 import { formatMessage } from "@/lib/i18n/format";
@@ -27,6 +27,15 @@ import {
   type ThemePreset,
 } from "@/lib/theme";
 import { ThemePreview } from "./ThemePreview";
+import { ImageCropModal } from "@/components/admin/ImageCropModal";
+
+// Each crop is shaped for the screen it will actually fill — a 16:9 "desktop"
+// crop stretched or cover-cropped onto a phone (or a 9:16 "mobile" one onto a
+// wide screen) is exactly the mismatch this feature exists to avoid.
+const DESKTOP_BG_ASPECT = 16 / 9;
+const DESKTOP_BG_OUTPUT = { width: 1600, height: 900 };
+const MOBILE_BG_ASPECT = 9 / 16;
+const MOBILE_BG_OUTPUT = { width: 900, height: 1600 };
 
 const ALL_TIMEZONES: string[] =
   typeof Intl.supportedValuesOf === "function" ? Intl.supportedValuesOf("timeZone") : ["UTC"];
@@ -37,6 +46,9 @@ const BACKGROUND_SWATCHES: Record<BackgroundStyle, string> = {
   GLOW: "radial-gradient(circle at 0% 0%, var(--color-brand-200), transparent 65%), radial-gradient(circle at 100% 30%, var(--storefront-glow), transparent 55%), var(--color-cream-100)",
   SOLID: "var(--color-cream-100)",
   DOTS: "radial-gradient(var(--color-cream-300) 1.2px, transparent 1.2px) 0 0 / 8px 8px, var(--color-cream-100)",
+  // Neutral placeholder until the tenant uploads a photo — overridden with an
+  // actual thumbnail inline wherever an image is already set.
+  IMAGE: "linear-gradient(135deg, var(--color-ink-100), var(--color-cream-100))",
 };
 
 const CORNER_SAMPLE_RADIUS: Record<CornerStyle, string> = {
@@ -57,6 +69,15 @@ export function TenantSettingsForm({ tenant }: { tenant: SerializedTenant }) {
     tenant.backgroundColor ?? DEFAULT_BACKGROUND_COLOR,
   );
   const [backgroundStyle, setBackgroundStyle] = useState(tenant.backgroundStyle);
+  const [backgroundImageDesktopUrl, setBackgroundImageDesktopUrl] = useState(
+    tenant.backgroundImageDesktopUrl ?? "",
+  );
+  const [backgroundImageMobileUrl, setBackgroundImageMobileUrl] = useState(
+    tenant.backgroundImageMobileUrl ?? "",
+  );
+  const [backgroundOverlayOpacity, setBackgroundOverlayOpacity] = useState(
+    tenant.backgroundOverlayOpacity,
+  );
   const [headingFont, setHeadingFont] = useState(tenant.headingFont);
   const [cornerStyle, setCornerStyle] = useState(tenant.cornerStyle);
   const [timezone, setTimezone] = useState(tenant.timezone);
@@ -64,6 +85,13 @@ export function TenantSettingsForm({ tenant }: { tenant: SerializedTenant }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [cropTarget, setCropTarget] = useState<"desktop" | "mobile" | null>(null);
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
+  const [uploadingBg, setUploadingBg] = useState(false);
+  const [bgError, setBgError] = useState("");
+  const desktopBgInputRef = useRef<HTMLInputElement>(null);
+  const mobileBgInputRef = useRef<HTMLInputElement>(null);
 
   const detectedTimezone = useMemo(() => Intl.DateTimeFormat().resolvedOptions().timeZone, []);
 
@@ -78,6 +106,9 @@ export function TenantSettingsForm({ tenant }: { tenant: SerializedTenant }) {
     accentColor: accentValid ? accentColor : null,
     backgroundColor: backgroundValid && !backgroundTooDark ? backgroundColor : null,
     backgroundStyle,
+    backgroundImageDesktopUrl: backgroundImageDesktopUrl || null,
+    backgroundImageMobileUrl: backgroundImageMobileUrl || null,
+    backgroundOverlayOpacity,
     headingFont,
     cornerStyle,
   };
@@ -98,6 +129,43 @@ export function TenantSettingsForm({ tenant }: { tenant: SerializedTenant }) {
       preset.headingFont === headingFont &&
       preset.cornerStyle === cornerStyle
     );
+  }
+
+  function handleBgFileChange(target: "desktop" | "mobile", e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setCropTarget(target);
+    setCropSrc(URL.createObjectURL(file));
+  }
+
+  function closeCropModal() {
+    if (cropSrc) URL.revokeObjectURL(cropSrc);
+    setCropTarget(null);
+    setCropSrc(null);
+  }
+
+  async function handleCropConfirm(blob: Blob) {
+    const target = cropTarget;
+    if (!target) return;
+    setUploadingBg(true);
+    setBgError("");
+    try {
+      const form = new FormData();
+      form.append("file", new File([blob], `background-${target}.jpg`, { type: "image/jpeg" }));
+      form.append("kind", target === "desktop" ? "bg-desktop" : "bg-mobile");
+      const res = await fetch("/api/uploads", { method: "POST", body: form });
+      const data = await res.json();
+      if (!res.ok) {
+        setBgError(data.error ?? t.uploadFailed);
+        return;
+      }
+      if (target === "desktop") setBackgroundImageDesktopUrl(data.url);
+      else setBackgroundImageMobileUrl(data.url);
+      closeCropModal();
+    } finally {
+      setUploadingBg(false);
+    }
   }
 
   async function handleLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -136,6 +204,9 @@ export function TenantSettingsForm({ tenant }: { tenant: SerializedTenant }) {
           accentColor,
           backgroundColor,
           backgroundStyle,
+          backgroundImageDesktopUrl: backgroundImageDesktopUrl || null,
+          backgroundImageMobileUrl: backgroundImageMobileUrl || null,
+          backgroundOverlayOpacity,
           headingFont,
           cornerStyle,
           timezone,
@@ -285,27 +356,77 @@ export function TenantSettingsForm({ tenant }: { tenant: SerializedTenant }) {
             />
 
             <OptionGroup label={t.backgroundStyle}>
-              <div className="grid grid-cols-3 gap-2">
-                {BACKGROUND_STYLES.map((style) => (
-                  <OptionTile
-                    key={style}
-                    selected={backgroundStyle === style}
-                    onClick={() => setBackgroundStyle(style)}
-                  >
-                    <span
-                      className="h-7 w-full rounded-lg border border-ink-100"
-                      style={
-                        {
-                          ...themePreviewStyle(theme),
-                          background: BACKGROUND_SWATCHES[style],
-                        } as CSSProperties
-                      }
-                    />
-                    {t.backgroundStyles[style]}
-                  </OptionTile>
-                ))}
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 md:grid-cols-2 lg:grid-cols-4">
+                {BACKGROUND_STYLES.map((style) => {
+                  const thumbnail =
+                    style === "IMAGE" ? backgroundImageDesktopUrl || backgroundImageMobileUrl : "";
+                  return (
+                    <OptionTile
+                      key={style}
+                      selected={backgroundStyle === style}
+                      onClick={() => setBackgroundStyle(style)}
+                    >
+                      <span
+                        className="h-7 w-full rounded-lg border border-ink-100 bg-cover bg-center"
+                        style={
+                          {
+                            ...themePreviewStyle(theme),
+                            background: thumbnail ? undefined : BACKGROUND_SWATCHES[style],
+                            backgroundImage: thumbnail ? `url(${thumbnail})` : undefined,
+                          } as CSSProperties
+                        }
+                      />
+                      {t.backgroundStyles[style]}
+                    </OptionTile>
+                  );
+                })}
               </div>
             </OptionGroup>
+
+            {backgroundStyle === "IMAGE" && (
+              <div className="flex flex-col gap-4 rounded-xl border border-ink-100 bg-cream-50 p-3.5">
+                <BackgroundImageField
+                  icon={<Monitor className="size-4" />}
+                  label={t.desktopBackground}
+                  hint={t.desktopBackgroundHint}
+                  imageUrl={backgroundImageDesktopUrl}
+                  uploadLabel={t.uploadBackground}
+                  replaceLabel={t.replaceBackground}
+                  removeLabel={t.removeBackground}
+                  inputRef={desktopBgInputRef}
+                  onChange={(e) => handleBgFileChange("desktop", e)}
+                  onRemove={() => setBackgroundImageDesktopUrl("")}
+                />
+                <BackgroundImageField
+                  icon={<Smartphone className="size-4" />}
+                  label={t.mobileBackground}
+                  hint={t.mobileBackgroundHint}
+                  imageUrl={backgroundImageMobileUrl}
+                  uploadLabel={t.uploadBackground}
+                  replaceLabel={t.replaceBackground}
+                  removeLabel={t.removeBackground}
+                  inputRef={mobileBgInputRef}
+                  onChange={(e) => handleBgFileChange("mobile", e)}
+                  onRemove={() => setBackgroundImageMobileUrl("")}
+                />
+                <FieldWrapper label={t.overlayOpacity} hint={t.overlayOpacityHint}>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="range"
+                      min={0}
+                      max={100}
+                      value={backgroundOverlayOpacity}
+                      onChange={(e) => setBackgroundOverlayOpacity(Number(e.target.value))}
+                      className="w-full accent-brand-500"
+                    />
+                    <span className="w-10 shrink-0 text-right text-sm text-ink-500">
+                      {backgroundOverlayOpacity}%
+                    </span>
+                  </div>
+                </FieldWrapper>
+                {bgError && <p className="text-xs text-danger-500">{bgError}</p>}
+              </div>
+            )}
 
             <OptionGroup label={t.headingFont}>
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 md:grid-cols-2 lg:grid-cols-4">
@@ -363,12 +484,33 @@ export function TenantSettingsForm({ tenant }: { tenant: SerializedTenant }) {
       <Button
         size="sm"
         loading={saving}
-        disabled={uploading || backgroundTooDark}
+        disabled={uploading || uploadingBg || backgroundTooDark}
         onClick={save}
         className="self-start"
       >
         {t.saveChanges}
       </Button>
+
+      {cropSrc && cropTarget && (
+        <ImageCropModal
+          imageSrc={cropSrc}
+          aspect={cropTarget === "desktop" ? DESKTOP_BG_ASPECT : MOBILE_BG_ASPECT}
+          outputWidth={
+            cropTarget === "desktop" ? DESKTOP_BG_OUTPUT.width : MOBILE_BG_OUTPUT.width
+          }
+          outputHeight={
+            cropTarget === "desktop" ? DESKTOP_BG_OUTPUT.height : MOBILE_BG_OUTPUT.height
+          }
+          title={cropTarget === "desktop" ? t.cropDesktopTitle : t.cropMobileTitle}
+          hint={t.cropHint}
+          cancelLabel={t.cropCancel}
+          confirmLabel={t.cropConfirm}
+          busy={uploadingBg}
+          error={bgError}
+          onCancel={closeCropModal}
+          onConfirm={handleCropConfirm}
+        />
+      )}
     </div>
   );
 }
@@ -439,6 +581,75 @@ function ColorField({
         />
       </div>
       {warning && !error && <span className="text-xs text-gold-600">{warning}</span>}
+    </FieldWrapper>
+  );
+}
+
+function BackgroundImageField({
+  icon,
+  label,
+  hint,
+  imageUrl,
+  uploadLabel,
+  replaceLabel,
+  removeLabel,
+  inputRef,
+  onChange,
+  onRemove,
+}: {
+  icon: ReactNode;
+  label: string;
+  hint: string;
+  imageUrl: string;
+  uploadLabel: string;
+  replaceLabel: string;
+  removeLabel: string;
+  inputRef: React.RefObject<HTMLInputElement | null>;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onRemove: () => void;
+}) {
+  return (
+    <FieldWrapper label={label} hint={hint}>
+      <div className="flex items-center gap-3">
+        {imageUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={imageUrl}
+            alt={label}
+            className="h-12 w-20 shrink-0 rounded-lg border border-ink-100 object-cover"
+          />
+        ) : (
+          <div className="flex h-12 w-20 shrink-0 items-center justify-center rounded-lg border border-dashed border-ink-200 text-ink-300">
+            {icon}
+          </div>
+        )}
+        <div className="flex items-center gap-2.5">
+          <input
+            ref={inputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/gif"
+            onChange={onChange}
+            className="hidden"
+          />
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => inputRef.current?.click()}
+          >
+            {imageUrl ? replaceLabel : uploadLabel}
+          </Button>
+          {imageUrl && (
+            <button
+              type="button"
+              onClick={onRemove}
+              className="cursor-pointer text-xs font-medium text-ink-500 hover:text-danger-600"
+            >
+              {removeLabel}
+            </button>
+          )}
+        </div>
+      </div>
     </FieldWrapper>
   );
 }

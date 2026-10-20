@@ -25,8 +25,14 @@ export const DEFAULT_BACKGROUND_COLOR = "#fbf4e7";
  * to remain readable. 0.7 keeps even the lighter grey hint text legible. */
 export const MIN_BACKGROUND_LUMINANCE = 0.7;
 
-export const BACKGROUND_STYLES = ["GLOW", "SOLID", "DOTS"] as const;
+export const BACKGROUND_STYLES = ["GLOW", "SOLID", "DOTS", "IMAGE"] as const;
 export type BackgroundStyle = (typeof BACKGROUND_STYLES)[number];
+
+/** Breakpoint (px) the storefront switches from the mobile-cropped background
+ * image to the desktop-cropped one. Matches Tailwind's `sm` breakpoint, the
+ * same one the rest of the app uses for its own mobile/desktop layout
+ * switches (e.g. the branch-card grid in BranchSelector). */
+export const BACKGROUND_IMAGE_BREAKPOINT_PX = 640;
 
 export const HEADING_FONTS = ["CLASSIC", "ELEGANT", "MODERN", "FRIENDLY"] as const;
 export type HeadingFont = (typeof HEADING_FONTS)[number];
@@ -38,6 +44,9 @@ export interface TenantTheme {
   accentColor: string | null;
   backgroundColor: string | null;
   backgroundStyle: string;
+  backgroundImageDesktopUrl: string | null;
+  backgroundImageMobileUrl: string | null;
+  backgroundOverlayOpacity: number;
   headingFont: string;
   cornerStyle: string;
 }
@@ -192,9 +201,27 @@ export function storefrontThemeVars(theme: TenantTheme): Record<string, string> 
   return vars;
 }
 
-/** The CSS `background` value for the storefront page. */
-export function storefrontBackground(backgroundStyle: string): string {
-  switch (pick(BACKGROUND_STYLES, backgroundStyle, "GLOW")) {
+/** Wraps a URL for safe interpolation into `url("...")` inside a `<style>`
+ * tag — escapes quotes/backslashes so a pathological value (this app only
+ * ever stores its own Vercel Blob URLs here, validated by zod as `.url()`,
+ * but a `<style dangerouslySetInnerHTML>` is still worth defending) can't
+ * break out of the string and inject other CSS. */
+function cssUrl(url: string): string {
+  return `url("${url.replace(/["\\]/g, (c) => `\\${c}`)}")`;
+}
+
+function overlayGradient(overlayOpacity: number): string {
+  const opacity = Math.max(0, Math.min(100, overlayOpacity)) / 100;
+  return `linear-gradient(rgba(255,255,255,${opacity}), rgba(255,255,255,${opacity}))`;
+}
+
+/** The CSS `background` value for the storefront page. For "IMAGE", prefers
+ * the desktop crop (falling back to the mobile one) — used for single-element
+ * contexts that can't express a responsive media-query swap, i.e. the Site
+ * Settings live preview. The real storefront page uses
+ * `storefrontBackgroundCss` instead, which picks per-breakpoint. */
+export function storefrontBackground(theme: TenantTheme): string {
+  switch (pick(BACKGROUND_STYLES, theme.backgroundStyle, "GLOW")) {
     case "SOLID":
       return "var(--color-cream-100)";
     case "DOTS":
@@ -205,7 +232,42 @@ export function storefrontBackground(backgroundStyle: string): string {
         "radial-gradient(900px 500px at 110% 10%, var(--storefront-glow) 0%, transparent 45%)",
         "var(--color-cream-100)",
       ].join(", ");
+    case "IMAGE": {
+      const url = theme.backgroundImageDesktopUrl ?? theme.backgroundImageMobileUrl;
+      if (!url) return "var(--color-cream-100)";
+      return `${overlayGradient(theme.backgroundOverlayOpacity)}, ${cssUrl(url)} center / cover no-repeat, var(--color-cream-100)`;
+    }
   }
+}
+
+/**
+ * The full `body{...}` CSS (including a mobile/desktop media query when the
+ * tenant uploaded a custom background image) for the real storefront page —
+ * `(storefront)/layout.tsx` injects this directly.
+ *
+ * A single `background` value can't swap per-breakpoint on its own, so the
+ * "IMAGE" case is the only one that needs more than one rule: it renders the
+ * tenant's mobile-cropped photo by default, then overrides to the
+ * desktop-cropped one past `BACKGROUND_IMAGE_BREAKPOINT_PX` — each crop made
+ * for the screen shape it actually fills, rather than one image stretched or
+ * cover-cropped across both.
+ */
+export function storefrontBackgroundCss(theme: TenantTheme): string {
+  if (
+    pick(BACKGROUND_STYLES, theme.backgroundStyle, "GLOW") === "IMAGE" &&
+    (theme.backgroundImageMobileUrl || theme.backgroundImageDesktopUrl)
+  ) {
+    const overlay = overlayGradient(theme.backgroundOverlayOpacity);
+    const mobileUrl = theme.backgroundImageMobileUrl ?? theme.backgroundImageDesktopUrl!;
+    const desktopUrl = theme.backgroundImageDesktopUrl ?? theme.backgroundImageMobileUrl!;
+    const layer = (url: string) => `${overlay}, ${cssUrl(url)} center / cover no-repeat`;
+    let css = `body{background:${layer(mobileUrl)}, var(--color-cream-100);}`;
+    if (desktopUrl !== mobileUrl) {
+      css += `@media (min-width:${BACKGROUND_IMAGE_BREAKPOINT_PX}px){body{background:${layer(desktopUrl)}, var(--color-cream-100);}}`;
+    }
+    return css;
+  }
+  return `body{background:${storefrontBackground(theme)};}`;
 }
 
 export function varsToCss(vars: Record<string, string>): string {
@@ -221,6 +283,6 @@ export function themePreviewStyle(theme: TenantTheme): CSSProperties {
   return {
     ...brandThemeVars(theme.accentColor),
     ...storefrontThemeVars(theme),
-    background: storefrontBackground(theme.backgroundStyle),
+    background: storefrontBackground(theme),
   } as CSSProperties;
 }

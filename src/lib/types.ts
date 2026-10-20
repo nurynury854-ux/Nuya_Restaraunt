@@ -6,6 +6,9 @@ export interface SerializedTenant {
   accentColor: string | null;
   backgroundColor: string | null;
   backgroundStyle: string;
+  backgroundImageDesktopUrl: string | null;
+  backgroundImageMobileUrl: string | null;
+  backgroundOverlayOpacity: number;
   headingFont: string;
   cornerStyle: string;
   tagline: string | null;

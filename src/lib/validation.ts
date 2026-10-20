@@ -125,6 +125,9 @@ export const tenantSettingsUpdateSchema = z.object({
     .nullable()
     .optional(),
   backgroundStyle: z.enum(BACKGROUND_STYLES).optional(),
+  backgroundImageDesktopUrl: z.string().trim().url().max(600).nullable().optional(),
+  backgroundImageMobileUrl: z.string().trim().url().max(600).nullable().optional(),
+  backgroundOverlayOpacity: z.number().int().min(0).max(100).optional(),
   headingFont: z.enum(HEADING_FONTS).optional(),
   cornerStyle: z.enum(CORNER_STYLES).optional(),
 });

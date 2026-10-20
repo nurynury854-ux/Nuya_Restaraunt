@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { getTenantBySlug } from "@/lib/tenant";
 import { isStorefrontOpen } from "@/lib/billing";
 import { StorefrontClosed } from "@/components/customer/StorefrontClosed";
-import { storefrontBackground, storefrontThemeVars, varsToCss } from "@/lib/theme";
+import { storefrontBackgroundCss, storefrontThemeVars, varsToCss } from "@/lib/theme";
 
 /**
  * The paywall.
@@ -33,7 +33,7 @@ export default async function StorefrontLayout({
   const tenant = await getTenantBySlug(tenantSlug);
 
   // The parent layout already 404s a missing tenant.
-  const themeCss = `:root{${varsToCss(storefrontThemeVars(tenant!))}}body{background:${storefrontBackground(tenant!.backgroundStyle)};}`;
+  const themeCss = `:root{${varsToCss(storefrontThemeVars(tenant!))}}${storefrontBackgroundCss(tenant!)}`;
 
   return (
     <>
