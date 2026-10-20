@@ -25,7 +25,7 @@ export function ThemePreview({
 
   return (
     <div
-      className="overflow-hidden rounded-2xl border border-ink-100 shadow-soft"
+      className="overflow-hidden rounded-2xl border border-ink-100 shadow-soft font-[family-name:var(--font-sans)]"
       style={themePreviewStyle(theme)}
       aria-hidden
     >

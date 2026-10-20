@@ -25,7 +25,7 @@ model Tenant {
   /// how each one maps onto the CSS theme variables; null / default values
   /// mean "use the platform's standard warm look".
   backgroundColor           String?
-  /// "GLOW" | "SOLID" | "DOTS" | "IMAGE"
+  /// "GLOW" | "SOLID" | "DOTS" | "GRADIENT" | "RINGS" | "IMAGE"
   backgroundStyle           String  @default("GLOW")
   /// Only used when backgroundStyle is "IMAGE". Pre-cropped to a wide ratio
   /// for desktop viewports, client-side before upload — same pattern as
@@ -45,6 +45,9 @@ model Tenant {
   backgroundOverlayOpacity  Int     @default(55)
   /// "CLASSIC" | "ELEGANT" | "MODERN" | "FRIENDLY"
   headingFont               String  @default("CLASSIC")
+  /// "CLASSIC" | "ROUNDED" | "COMPACT" — body copy, as distinct from the
+  /// display-only headingFont above.
+  bodyFont                  String  @default("CLASSIC")
   /// "SHARP" | "SOFT" | "ROUNDED"
   cornerStyle               String  @default("ROUNDED")
   /// Short line shown under the business name on the storefront home page.

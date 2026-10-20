@@ -10,6 +10,7 @@ export interface SerializedTenant {
   backgroundImageMobileUrl: string | null;
   backgroundOverlayOpacity: number;
   headingFont: string;
+  bodyFont: string;
   cornerStyle: string;
   tagline: string | null;
   timezone: string;

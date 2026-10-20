@@ -6,6 +6,8 @@ import {
   Noto_Serif_TC,
   Playfair_Display,
   Nunito,
+  Quicksand,
+  Work_Sans,
 } from "next/font/google";
 import { PageTransition } from "@/components/PageTransition";
 import { LocaleProvider } from "@/components/i18n/LocaleProvider";
@@ -60,6 +62,23 @@ const nunito = Nunito({
   preload: false,
 });
 
+// Optional storefront BODY fonts (see BODY_FONTS in src/lib/theme.ts) — unlike
+// the heading fonts above, these need regular/medium weights since body copy
+// is read in bulk, not just a few display words.
+const quicksand = Quicksand({
+  variable: "--font-quicksand",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  preload: false,
+});
+
+const workSans = Work_Sans({
+  variable: "--font-work-sans",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  preload: false,
+});
+
 export const metadata: Metadata = {
   title: `${PLATFORM_NAME} — Online Ordering for Restaurants`,
   description:
@@ -86,7 +105,7 @@ export default async function RootLayout({
     <html
       lang={LOCALE_HTML_LANG[locale]}
       data-scroll-behavior="smooth"
-      className={`${inter.variable} ${fraunces.variable} ${notoSansTC.variable} ${notoSerifTC.variable} ${playfair.variable} ${nunito.variable} h-full antialiased`}
+      className={`${inter.variable} ${fraunces.variable} ${notoSansTC.variable} ${notoSerifTC.variable} ${playfair.variable} ${nunito.variable} ${quicksand.variable} ${workSans.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <LocaleProvider initialLocale={locale}>

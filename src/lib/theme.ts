@@ -25,7 +25,7 @@ export const DEFAULT_BACKGROUND_COLOR = "#fbf4e7";
  * to remain readable. 0.7 keeps even the lighter grey hint text legible. */
 export const MIN_BACKGROUND_LUMINANCE = 0.7;
 
-export const BACKGROUND_STYLES = ["GLOW", "SOLID", "DOTS", "IMAGE"] as const;
+export const BACKGROUND_STYLES = ["GLOW", "SOLID", "DOTS", "GRADIENT", "RINGS", "IMAGE"] as const;
 export type BackgroundStyle = (typeof BACKGROUND_STYLES)[number];
 
 /** Breakpoint (px) the storefront switches from the mobile-cropped background
@@ -36,6 +36,9 @@ export const BACKGROUND_IMAGE_BREAKPOINT_PX = 640;
 
 export const HEADING_FONTS = ["CLASSIC", "ELEGANT", "MODERN", "FRIENDLY"] as const;
 export type HeadingFont = (typeof HEADING_FONTS)[number];
+
+export const BODY_FONTS = ["CLASSIC", "ROUNDED", "COMPACT"] as const;
+export type BodyFont = (typeof BODY_FONTS)[number];
 
 export const CORNER_STYLES = ["SHARP", "SOFT", "ROUNDED"] as const;
 export type CornerStyle = (typeof CORNER_STYLES)[number];
@@ -48,6 +51,7 @@ export interface TenantTheme {
   backgroundImageMobileUrl: string | null;
   backgroundOverlayOpacity: number;
   headingFont: string;
+  bodyFont: string;
   cornerStyle: string;
 }
 
@@ -58,6 +62,15 @@ export const HEADING_FONT_STACKS: Record<HeadingFont, string> = {
   ELEGANT: "var(--font-playfair), var(--font-noto-serif-tc)",
   MODERN: "var(--font-inter), var(--font-noto-sans-tc)",
   FRIENDLY: "var(--font-nunito), var(--font-noto-sans-tc)",
+};
+
+/** Font stacks for each body-text choice. Unlike the heading fonts, these
+ * need to stay legible at small sizes across a whole page of copy, not just
+ * a few display words. */
+export const BODY_FONT_STACKS: Record<BodyFont, string> = {
+  CLASSIC: "var(--font-inter), var(--font-noto-sans-tc)",
+  ROUNDED: "var(--font-quicksand), var(--font-noto-sans-tc)",
+  COMPACT: "var(--font-work-sans), var(--font-noto-sans-tc)",
 };
 
 /** Overrides for Tailwind's radius scale. ROUNDED is the platform default,
@@ -86,6 +99,7 @@ export interface ThemePreset {
   backgroundColor: string;
   backgroundStyle: BackgroundStyle;
   headingFont: HeadingFont;
+  bodyFont: BodyFont;
   cornerStyle: CornerStyle;
 }
 
@@ -98,6 +112,7 @@ export const THEME_PRESETS: ThemePreset[] = [
     backgroundColor: DEFAULT_BACKGROUND_COLOR,
     backgroundStyle: "GLOW",
     headingFont: "CLASSIC",
+    bodyFont: "CLASSIC",
     cornerStyle: "ROUNDED",
   },
   {
@@ -106,6 +121,7 @@ export const THEME_PRESETS: ThemePreset[] = [
     backgroundColor: "#f2f7ef",
     backgroundStyle: "GLOW",
     headingFont: "FRIENDLY",
+    bodyFont: "ROUNDED",
     cornerStyle: "ROUNDED",
   },
   {
@@ -114,6 +130,7 @@ export const THEME_PRESETS: ThemePreset[] = [
     backgroundColor: "#f1f5fa",
     backgroundStyle: "SOLID",
     headingFont: "MODERN",
+    bodyFont: "COMPACT",
     cornerStyle: "SOFT",
   },
   {
@@ -122,6 +139,7 @@ export const THEME_PRESETS: ThemePreset[] = [
     backgroundColor: "#f8f4ee",
     backgroundStyle: "SOLID",
     headingFont: "ELEGANT",
+    bodyFont: "CLASSIC",
     cornerStyle: "SHARP",
   },
   {
@@ -130,6 +148,7 @@ export const THEME_PRESETS: ThemePreset[] = [
     backgroundColor: "#fff4f6",
     backgroundStyle: "DOTS",
     headingFont: "FRIENDLY",
+    bodyFont: "ROUNDED",
     cornerStyle: "ROUNDED",
   },
 ];
@@ -196,6 +215,9 @@ export function storefrontThemeVars(theme: TenantTheme): Record<string, string> 
   const font = pick(HEADING_FONTS, theme.headingFont, "CLASSIC");
   vars["--font-display"] = HEADING_FONT_STACKS[font];
 
+  const bodyFont = pick(BODY_FONTS, theme.bodyFont, "CLASSIC");
+  vars["--font-sans"] = BODY_FONT_STACKS[bodyFont];
+
   Object.assign(vars, CORNER_RADII[pick(CORNER_STYLES, theme.cornerStyle, "ROUNDED")]);
 
   return vars;
@@ -230,6 +252,13 @@ export function storefrontBackground(theme: TenantTheme): string {
       return [
         "radial-gradient(1200px 600px at 10% -10%, var(--color-brand-100) 0%, transparent 60%)",
         "radial-gradient(900px 500px at 110% 10%, var(--storefront-glow) 0%, transparent 45%)",
+        "var(--color-cream-100)",
+      ].join(", ");
+    case "GRADIENT":
+      return "linear-gradient(160deg, var(--color-brand-100) 0%, var(--color-cream-100) 55%, var(--storefront-glow) 150%)";
+    case "RINGS":
+      return [
+        "repeating-radial-gradient(circle at 50% -10%, transparent 0, transparent 60px, var(--color-brand-100) 61px, var(--color-brand-100) 64px)",
         "var(--color-cream-100)",
       ].join(", ");
     case "IMAGE": {

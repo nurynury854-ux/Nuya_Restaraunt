@@ -97,6 +97,8 @@ export const adminSettings: typeof enAdminSettings = {
       GLOW: "柔和光暈",
       SOLID: "純色",
       DOTS: "圓點",
+      GRADIENT: "漸層",
+      RINGS: "圈圈",
       IMAGE: "自訂圖片",
     },
     desktopBackground: "電腦版背景",
@@ -119,6 +121,12 @@ export const adminSettings: typeof enAdminSettings = {
       ELEGANT: "優雅",
       MODERN: "現代",
       FRIENDLY: "親切",
+    },
+    bodyFont: "內文字型",
+    bodyFonts: {
+      CLASSIC: "經典",
+      ROUNDED: "圓潤",
+      COMPACT: "簡潔",
     },
     cornerStyle: "圓角",
     cornerStyles: {

@@ -12,6 +12,8 @@ import { FieldWrapper, Input, Select } from "@/components/ui/Field";
 import { HEX_COLOR_REGEX, contrastRatio } from "@/lib/color";
 import {
   BACKGROUND_STYLES,
+  BODY_FONTS,
+  BODY_FONT_STACKS,
   CORNER_STYLES,
   DEFAULT_ACCENT_COLOR,
   DEFAULT_BACKGROUND_COLOR,
@@ -21,6 +23,7 @@ import {
   isReadableBackground,
   themePreviewStyle,
   type BackgroundStyle,
+  type BodyFont,
   type CornerStyle,
   type HeadingFont,
   type TenantTheme,
@@ -46,6 +49,8 @@ const BACKGROUND_SWATCHES: Record<BackgroundStyle, string> = {
   GLOW: "radial-gradient(circle at 0% 0%, var(--color-brand-200), transparent 65%), radial-gradient(circle at 100% 30%, var(--storefront-glow), transparent 55%), var(--color-cream-100)",
   SOLID: "var(--color-cream-100)",
   DOTS: "radial-gradient(var(--color-cream-300) 1.2px, transparent 1.2px) 0 0 / 8px 8px, var(--color-cream-100)",
+  GRADIENT: "linear-gradient(160deg, var(--color-brand-100) 0%, var(--color-cream-100) 55%, var(--storefront-glow) 150%)",
+  RINGS: "repeating-radial-gradient(circle at 50% -40%, transparent 0, transparent 8px, var(--color-brand-100) 9px, var(--color-brand-100) 10px), var(--color-cream-100)",
   // Neutral placeholder until the tenant uploads a photo — overridden with an
   // actual thumbnail inline wherever an image is already set.
   IMAGE: "linear-gradient(135deg, var(--color-ink-100), var(--color-cream-100))",
@@ -79,6 +84,7 @@ export function TenantSettingsForm({ tenant }: { tenant: SerializedTenant }) {
     tenant.backgroundOverlayOpacity,
   );
   const [headingFont, setHeadingFont] = useState(tenant.headingFont);
+  const [bodyFont, setBodyFont] = useState(tenant.bodyFont);
   const [cornerStyle, setCornerStyle] = useState(tenant.cornerStyle);
   const [timezone, setTimezone] = useState(tenant.timezone);
   const [uploading, setUploading] = useState(false);
@@ -110,6 +116,7 @@ export function TenantSettingsForm({ tenant }: { tenant: SerializedTenant }) {
     backgroundImageMobileUrl: backgroundImageMobileUrl || null,
     backgroundOverlayOpacity,
     headingFont,
+    bodyFont,
     cornerStyle,
   };
 
@@ -118,6 +125,7 @@ export function TenantSettingsForm({ tenant }: { tenant: SerializedTenant }) {
     setBackgroundColor(preset.backgroundColor);
     setBackgroundStyle(preset.backgroundStyle);
     setHeadingFont(preset.headingFont);
+    setBodyFont(preset.bodyFont);
     setCornerStyle(preset.cornerStyle);
   }
 
@@ -127,6 +135,7 @@ export function TenantSettingsForm({ tenant }: { tenant: SerializedTenant }) {
       preset.backgroundColor === backgroundColor.toLowerCase() &&
       preset.backgroundStyle === backgroundStyle &&
       preset.headingFont === headingFont &&
+      preset.bodyFont === bodyFont &&
       preset.cornerStyle === cornerStyle
     );
   }
@@ -208,6 +217,7 @@ export function TenantSettingsForm({ tenant }: { tenant: SerializedTenant }) {
           backgroundImageMobileUrl: backgroundImageMobileUrl || null,
           backgroundOverlayOpacity,
           headingFont,
+          bodyFont,
           cornerStyle,
           timezone,
         }),
@@ -356,7 +366,7 @@ export function TenantSettingsForm({ tenant }: { tenant: SerializedTenant }) {
             />
 
             <OptionGroup label={t.backgroundStyle}>
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 md:grid-cols-2 lg:grid-cols-4">
+              <div className="grid grid-cols-3 gap-2">
                 {BACKGROUND_STYLES.map((style) => {
                   const thumbnail =
                     style === "IMAGE" ? backgroundImageDesktopUrl || backgroundImageMobileUrl : "";
@@ -443,6 +453,26 @@ export function TenantSettingsForm({ tenant }: { tenant: SerializedTenant }) {
                       Aa
                     </span>
                     {t.headingFonts[font]}
+                  </OptionTile>
+                ))}
+              </div>
+            </OptionGroup>
+
+            <OptionGroup label={t.bodyFont}>
+              <div className="grid grid-cols-3 gap-2">
+                {BODY_FONTS.map((font: BodyFont) => (
+                  <OptionTile
+                    key={font}
+                    selected={bodyFont === font}
+                    onClick={() => setBodyFont(font)}
+                  >
+                    <span
+                      className="text-sm leading-none"
+                      style={{ fontFamily: BODY_FONT_STACKS[font] }}
+                    >
+                      Aa Bb
+                    </span>
+                    {t.bodyFonts[font]}
                   </OptionTile>
                 ))}
               </div>

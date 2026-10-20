@@ -97,6 +97,8 @@ export const adminSettings = {
       GLOW: "Soft glow",
       SOLID: "Solid",
       DOTS: "Dots",
+      GRADIENT: "Gradient",
+      RINGS: "Rings",
       IMAGE: "Custom photo",
     },
     desktopBackground: "Desktop background",
@@ -121,6 +123,12 @@ export const adminSettings = {
       ELEGANT: "Elegant",
       MODERN: "Modern",
       FRIENDLY: "Friendly",
+    },
+    bodyFont: "Body font",
+    bodyFonts: {
+      CLASSIC: "Classic",
+      ROUNDED: "Rounded",
+      COMPACT: "Compact",
     },
     cornerStyle: "Corners",
     cornerStyles: {

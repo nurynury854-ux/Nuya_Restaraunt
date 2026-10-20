@@ -9,6 +9,7 @@ import { isValidTimezone } from "@/lib/timezone";
 import { HEX_COLOR_REGEX } from "@/lib/color";
 import {
   BACKGROUND_STYLES,
+  BODY_FONTS,
   CORNER_STYLES,
   HEADING_FONTS,
   isReadableBackground,
@@ -129,6 +130,7 @@ export const tenantSettingsUpdateSchema = z.object({
   backgroundImageMobileUrl: z.string().trim().url().max(600).nullable().optional(),
   backgroundOverlayOpacity: z.number().int().min(0).max(100).optional(),
   headingFont: z.enum(HEADING_FONTS).optional(),
+  bodyFont: z.enum(BODY_FONTS).optional(),
   cornerStyle: z.enum(CORNER_STYLES).optional(),
 });
 
