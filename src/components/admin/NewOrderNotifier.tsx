@@ -89,40 +89,46 @@ export function NewOrderNotifier({ branchId }: { branchId: string }) {
   }
 
   return (
-    // Button and toasts share one positioned container (stacked via flex gap)
-    // instead of two independently-offset `fixed` elements — those previously
-    // drifted out of sync with each other and, at top-16, sat low enough to
-    // overlap BranchNav's "Location Settings" link underneath. top-28 here
-    // clears both AdminTopBar and BranchNav with margin to spare.
-    <div className="fixed inset-x-3 top-28 z-50 flex flex-col items-end gap-2 sm:inset-x-auto sm:right-5 sm:w-80">
-      <button
-        onClick={toggleSound}
-        className="flex items-center gap-1.5 rounded-full border border-ink-100 bg-white px-3 py-1.5 text-xs text-ink-500 shadow-soft transition-colors hover:border-brand-300"
-      >
-        {soundOn ? <Bell className="size-3.5 text-brand-500" /> : <BellOff className="size-3.5" />}
-        {soundOn ? t.soundOn : t.soundOff}
-      </button>
+    // `sticky`, not `fixed` — this renders right after BranchNav in the DOM,
+    // and sticky elements can never overlap whatever precedes them in normal
+    // flow (they start exactly where they'd naturally sit, then stick once
+    // scrolled to). A `fixed` + hardcoded `top-*` offset here previously had
+    // to guess how tall everything above it was, which broke the moment a
+    // banner it didn't know about (EmailVerifyBanner, wrapping to multiple
+    // lines on phones) rendered above BranchNav too.
+    <div className="sticky top-0 z-40 flex justify-end px-3 pt-2 sm:px-5">
+      <div className="flex w-full flex-col items-end gap-2 sm:w-80">
+        <button
+          onClick={toggleSound}
+          className="flex items-center gap-1.5 rounded-full border border-ink-100 bg-white px-3 py-1.5 text-xs text-ink-500 shadow-soft transition-colors hover:border-brand-300"
+        >
+          {soundOn ? <Bell className="size-3.5 text-brand-500" /> : <BellOff className="size-3.5" />}
+          {soundOn ? t.soundOn : t.soundOff}
+        </button>
 
-      <AnimatePresence>
-        {toasts.map((order) => (
-          <motion.div
-            key={order.id}
-            initial={{ opacity: 0, x: 40 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 40 }}
-            transition={{ duration: 0.25 }}
-            className="flex w-full items-start gap-3 rounded-2xl bg-ink-900 px-4 py-3.5 text-white shadow-lift"
-          >
-            <PartyPopper className="mt-0.5 size-5 shrink-0 text-gold-400" />
-            <div className="min-w-0">
-              <p className="text-sm font-semibold">{formatMessage(t.newOrder, { orderNo: order.orderNo })}</p>
-              <p className="truncate text-xs text-white/70">
-                {order.customerName} · ${order.totalAmount}
-              </p>
-            </div>
-          </motion.div>
-        ))}
-      </AnimatePresence>
+        <AnimatePresence>
+          {toasts.map((order) => (
+            <motion.div
+              key={order.id}
+              initial={{ opacity: 0, x: 40 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 40 }}
+              transition={{ duration: 0.25 }}
+              className="flex w-full items-start gap-3 rounded-2xl bg-ink-900 px-4 py-3.5 text-white shadow-lift"
+            >
+              <PartyPopper className="mt-0.5 size-5 shrink-0 text-gold-400" />
+              <div className="min-w-0">
+                <p className="text-sm font-semibold">
+                  {formatMessage(t.newOrder, { orderNo: order.orderNo })}
+                </p>
+                <p className="truncate text-xs text-white/70">
+                  {order.customerName} · ${order.totalAmount}
+                </p>
+              </div>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </div>
     </div>
   );
 }
