@@ -62,13 +62,14 @@ export function AdminTopBar({
         <button
           onClick={handleCopySiteUrl}
           title={t.copySiteUrl}
-          className="hidden max-w-[220px] cursor-pointer items-center gap-1.5 rounded-lg border border-ink-100 bg-white px-2.5 py-1 text-xs text-ink-500 transition-colors hover:border-brand-300 hover:text-brand-600 sm:flex"
+          aria-label={t.copySiteUrl}
+          className="flex max-w-[220px] shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border border-ink-100 bg-white px-2 py-2 text-xs text-ink-500 transition-colors hover:border-brand-300 hover:text-brand-600 sm:px-2.5 sm:py-1"
         >
-          <span className="truncate">{siteUrlDisplay}</span>
+          <span className="hidden truncate sm:inline">{siteUrlDisplay}</span>
           {copied ? (
-            <Check className="size-3.5 shrink-0 text-success-600" />
+            <Check className="size-4 shrink-0 text-success-600 sm:size-3.5" />
           ) : (
-            <Copy className="size-3.5 shrink-0" />
+            <Copy className="size-4 shrink-0 sm:size-3.5" />
           )}
         </button>
         <span className="hidden text-xs text-ink-400 sm:inline">{email}</span>
