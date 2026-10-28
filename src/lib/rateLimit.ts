@@ -99,6 +99,11 @@ export const RATE_LIMITS = {
   // Checkout session, a portal session) and counts against Stripe's own API
   // limits. A tenant subscribing needs one or two; a loop needs capping.
   billing: { limit: 10, windowMs: 60_000 },
+  // Authenticated, but each call sends a real SMS through the tenant's own
+  // (paid) Mitake account to a phone number the caller supplies — tight cap
+  // so a compromised/misused admin session can't be used to spam arbitrary
+  // numbers or run up the tenant's SMS bill.
+  smsTest: { limit: 3, windowMs: 5 * 60_000 },
 } as const satisfies Record<string, RateLimitRule>;
 
 export function checkRateLimit(key: string, rule: RateLimitRule): RateLimitResult {

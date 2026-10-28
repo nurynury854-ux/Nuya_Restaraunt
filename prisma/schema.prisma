@@ -103,6 +103,18 @@ model Tenant {
   /// access check, which trusts subscriptionStatus.
   currentPeriodEnd     DateTime?
 
+  /// Customer SMS notifications (order-completed alert), via the tenant's own
+  /// Mitake (三竹簡訊) account — this is a template, so each tenant brings
+  /// their own account rather than sending through one shared platform
+  /// account under the platform's name. SMS is "on" when both fields below
+  /// are set; see src/lib/sms.ts.
+  smsUsername    String?
+  /// AES-256-GCM ciphertext (see src/lib/secretCrypto.ts) — never the
+  /// plaintext password. Mitake's API takes the password in cleartext on
+  /// every send (it can't be one-way hashed like a login password), but it
+  /// still shouldn't sit in the database in the clear.
+  smsPasswordEnc String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

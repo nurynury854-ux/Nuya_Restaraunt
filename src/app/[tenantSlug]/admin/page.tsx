@@ -14,7 +14,7 @@ import { AdminTopBar } from "@/components/admin/AdminTopBar";
 import { EmailVerifyBanner } from "@/components/admin/EmailVerifyBanner";
 import { SubscriptionBanner } from "@/components/admin/SubscriptionBanner";
 import Link from "next/link";
-import { Settings, CreditCard } from "lucide-react";
+import { Settings, CreditCard, Bell } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -87,6 +87,13 @@ export default async function AdminBranchSelectPage({
           >
             <CreditCard className="size-4" />
             {dict.billing.nav}
+          </Link>
+          <Link
+            href={`/${tenantSlug}/admin/notifications`}
+            className="mt-4 ml-2 inline-flex h-11 items-center gap-2 rounded-xl border border-ink-100 bg-white px-5 text-sm font-medium text-ink-700 shadow-soft transition-colors hover:border-brand-300 hover:text-brand-600"
+          >
+            <Bell className="size-4" />
+            {dict.notifications.nav}
           </Link>
         </div>
         <AdminBranchCards

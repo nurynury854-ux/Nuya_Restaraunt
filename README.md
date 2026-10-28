@@ -19,15 +19,16 @@ This started as a single-restaurant demo and was rebuilt into a real multi-tenan
 
 1. **Postgres database.** Vercel project → **Storage** tab → **Create Database** → Neon/Postgres (auto-adds `DATABASE_URL`), or bring your own from [neon.tech](https://neon.tech) / [supabase.com](https://supabase.com) and add `DATABASE_URL` under Settings → Environment Variables.
 2. **`SESSION_SECRET`** environment variable — any long random string (signs the admin session cookie). Generate one with `openssl rand -hex 32`.
-3. **Vercel Blob storage** (needed for logo/menu photo uploads) — Vercel project → **Storage** tab → **Create Database** → **Blob**. This automatically adds a `BLOB_READ_WRITE_TOKEN` environment variable. Without this, the app still works, but image uploads will fail.
-4. **Platform-admin dashboard credentials** — three more environment variables, for the owner-only tenant-management dashboard at `/platform-admin` (see below):
+3. **`SECRET_ENCRYPTION_KEY`** — exactly 32 bytes of hex (64 characters), generated the same way: `openssl rand -hex 32`. Encrypts third-party credentials a tenant pastes into their own settings at rest (currently just their SMS account password — see [Customer SMS notifications](#customer-sms-notifications-how-tenants-connect-their-own-account) below). Without this set, saving those settings fails outright rather than storing anything unencrypted.
+4. **Vercel Blob storage** (needed for logo/menu photo uploads) — Vercel project → **Storage** tab → **Create Database** → **Blob**. This automatically adds a `BLOB_READ_WRITE_TOKEN` environment variable. Without this, the app still works, but image uploads will fail.
+5. **Platform-admin dashboard credentials** — three more environment variables, for the owner-only tenant-management dashboard at `/platform-admin` (see below):
    - `PLATFORM_ADMIN_EMAIL` — the email you'll log in with.
    - `PLATFORM_ADMIN_PASSWORD` — any strong password.
    - `PLATFORM_SESSION_SECRET` — another long random string, generated the same way as `SESSION_SECRET` (`openssl rand -hex 32`) — keep it different from `SESSION_SECRET` so a leak of one can't be used to forge the other. Until these three are set, `/platform-admin` has no valid credentials and login always fails.
-5. **`RESEND_API_KEY`** (needed for email verification / password reset — see below) — create a free account at [resend.com](https://resend.com) and generate an API key. Without a verified sending domain (`EMAIL_FROM` + a domain added under Resend → Domains), mail can only reach the Resend account's own inbox — fine for testing solo, not for real tenants signing up. Add a custom domain in Resend whenever you're ready and point `EMAIL_FROM` at it (e.g. `Nuya <noreply@yourdomain.com>`); every verify/reset link is already built from the request's own origin, so no other code or config needs to change.
-6. **`PAYMENT_INSTRUCTIONS`** — the bank-transfer details tenants see on their Billing page: bank, account name and number, and the price. Free text; line breaks are kept, so write it however you'd like it to read (both languages are fine in one block). Until it's set, the Billing page tells tenants to contact you. See [Billing](#billing-how-tenants-pay) below.
+6. **`RESEND_API_KEY`** (needed for email verification / password reset — see below) — create a free account at [resend.com](https://resend.com) and generate an API key. Without a verified sending domain (`EMAIL_FROM` + a domain added under Resend → Domains), mail can only reach the Resend account's own inbox — fine for testing solo, not for real tenants signing up. Add a custom domain in Resend whenever you're ready and point `EMAIL_FROM` at it (e.g. `Nuya <noreply@yourdomain.com>`); every verify/reset link is already built from the request's own origin, so no other code or config needs to change.
+7. **`PAYMENT_INSTRUCTIONS`** — the bank-transfer details tenants see on their Billing page: bank, account name and number, and the price. Free text; line breaks are kept, so write it however you'd like it to read (both languages are fine in one block). Until it's set, the Billing page tells tenants to contact you. See [Billing](#billing-how-tenants-pay) below.
 
-7. **Set up the database schema once**, from your own computer:
+8. **Set up the database schema once**, from your own computer:
    ```bash
    npm install
    ```
@@ -42,7 +43,7 @@ This started as a single-restaurant demo and was rebuilt into a real multi-tenan
    This creates the tables and loads one example tenant (see below) so there's something to click through immediately.
 
    **Upgrading an existing deployment?** After the schema push, run `npm run db:grandfather-billing` once. Tenants created before billing existed have no trial and were never approved, which would take their sites offline; this approves them with no end date. It's safe to re-run and won't resurrect anyone whose trial genuinely lapsed or whom you revoked.
-8. **Deploy.** The build runs `prisma generate` automatically.
+9. **Deploy.** The build runs `prisma generate` automatically.
 
 ### Demo tenant (seeded automatically)
 
@@ -91,6 +92,7 @@ The checkout success page links straight to a live status page for that order; c
 - **Locations**: add/edit locations (name, address, phone, hours), each with its own time slots; disable a location to hide it from ordering. Each location also has its own **closed-date list** (holidays, one-off closures) that blocks ordering for that date without touching the regular time slots.
 - **Site Settings**: business name, tagline, logo upload, and an Appearance section that re-themes that tenant's customer-facing site — brand color, background color and style, heading font, and corner style, with one-click presets and a live preview.
 - **Billing**: trial / paid status, whether their site is currently live, and how to pay — their payment reference code and your bank-transfer details. See "Billing" below.
+- **Notifications**: connect their own SMS account to text customers when an order is marked Completed. See "Customer SMS notifications" below.
 
 ### Platform-admin dashboard (you, not tenants)
 At `/platform-admin`, gated by the `PLATFORM_ADMIN_EMAIL`/`PLATFORM_ADMIN_PASSWORD`/`PLATFORM_SESSION_SECRET` env vars above — completely separate login and session cookie from tenant admin accounts, so a compromised tenant login can never reach it. Lists every tenant (search by name, URL or payment reference; paginated; a "Not yet paid" filter for tenants you haven't approved), with each row showing the owner's email, location count, order count, signup date, and billing status (trial / trial ended / paid / expired, the paid-through date, the payment reference, plus an explicit flag when a site is offline). Actions: approve a tenant or record a renewal once their bank transfer arrives (see "Billing" below), suspend/reactivate a tenant (immediately blocks their admin login and their public site — a suspended owner is told their site is deactivated, rather than that their password is wrong, so they contact you instead of chasing a password reset), or permanently delete a tenant and everything under it (locations, menu, orders, admin accounts) — delete requires typing the tenant's slug to confirm.
@@ -109,6 +111,17 @@ To a diner, a closed storefront shows a neutral "temporarily unavailable" notice
 **Stripe is built but dormant.** `src/lib/stripe.ts`, `/api/billing/*` and `/api/stripe/webhook` are still here, but nothing in the UI starts a Checkout and the access check ignores the Stripe fields. To switch to self-serve card payments later, set `STRIPE_SECRET_KEY` / `STRIPE_PRICE_ID` / `STRIPE_WEBHOOK_SECRET`, count an `ACTIVE`/`PAST_DUE` `subscriptionStatus` as paid in `getBillingState()`, and add Subscribe / Manage billing buttons back to the Billing page.
 
 Not yet built: billing emails (nudges are in-app only), a payment history (only the latest paid-through date and a free-text note are kept), and local invoicing — if you're selling into Taiwan, domestic sales require government e-invoices (電子發票), which would need a separate provider.
+
+### Customer SMS notifications (how tenants connect their own account)
+A tenant can text a customer automatically the moment their order is marked Completed, from **Admin → Notifications**. This is deliberately **per-tenant, not a shared platform account** — on a template serving many unrelated businesses, one shared sender would mean every tenant's customers getting texts that don't look like they're from the restaurant they ordered from. Each tenant pastes in their own [Mitake (三竹簡訊)](https://www.mitake.com.tw/) account username and password; messages send under that account.
+
+- The password is **encrypted at rest** (`SECRET_ENCRYPTION_KEY` above, AES-256-GCM, `src/lib/secretCrypto.ts`) — Mitake's API needs it in the clear on every send, so it can't be hashed like a login password, but it also isn't stored as plain text.
+- A **Send test** button (`/api/tenant/sms/test`) lets a tenant confirm their account works before a real order depends on it, rate-limited to 3 per 5 minutes since each call sends a real, billable message.
+- The actual send (`src/lib/sms.ts`) is **best-effort and non-blocking**: it runs via Next's `after()` once the order-completion request has already responded, and a failed or misconfigured send is logged server-side but never fails the status update itself.
+- Only fires on the **PENDING → COMPLETED transition**, not on re-saving an already-completed order, so toggling status back and forth doesn't re-text the customer.
+- The Mitake HTTP API isn't reflected in this project's own tests (no live account to test against) — it's implemented against Mitake's [official PHP SDK](https://github.com/minchao/mitake-php) source as the reference, and was confirmed to reach the real endpoint and parse a real (error) response during development, but verify an actual send against your own account before relying on it.
+
+Not yet built: LINE as a second channel. Unlike SMS, LINE can't message a phone number directly — it needs the customer's LINE user id, which means adding a "Link your LINE account" step (LINE Login) to checkout first. SMS shipped first because checkout already collects a phone number for every order.
 
 ### Live updates
 New orders, order status changes, time-slot edits, and menu changes all propagate automatically — no manual refresh anywhere. Every screen quietly re-checks the database every few seconds (~4s on the admin order boards/alert, ~8–10s elsewhere) and pauses while the tab is in the background. This polling approach (rather than a persistent push connection) is what makes it work reliably on Vercel's serverless hosting.
@@ -142,7 +155,7 @@ npm run db:setup   # first time only — creates tables + demo tenant
 npm run dev
 ```
 
-Requires a `.env` with `DATABASE_URL` (Postgres) and `SESSION_SECRET`; add `BLOB_READ_WRITE_TOKEN` too if you want image uploads to work locally (from a Vercel Blob store, same as production), and `PAYMENT_INSTRUCTIONS` if you want the Billing page to show real transfer details.
+Requires a `.env` with `DATABASE_URL` (Postgres), `SESSION_SECRET`, and `SECRET_ENCRYPTION_KEY`; add `BLOB_READ_WRITE_TOKEN` too if you want image uploads to work locally (from a Vercel Blob store, same as production), and `PAYMENT_INSTRUCTIONS` if you want the Billing page to show real transfer details.
 
 ## Project structure
 

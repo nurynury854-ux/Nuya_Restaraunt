@@ -134,6 +134,22 @@ export const tenantSettingsUpdateSchema = z.object({
   cornerStyle: z.enum(CORNER_STYLES).optional(),
 });
 
+/** Set both fields to configure SMS notifications, or both to null to turn
+ * them off. The password is encrypted server-side before it's ever written
+ * to the database — see src/app/api/tenant/sms/route.ts. */
+export const smsSettingsUpdateSchema = z
+  .object({
+    smsUsername: z.string().trim().min(1).max(100).nullable(),
+    smsPassword: z.string().trim().min(1).max(100).nullable(),
+  })
+  .refine((data) => (data.smsUsername === null) === (data.smsPassword === null), {
+    message: "Enter both the Mitake username and password, or clear both to turn SMS off",
+  });
+
+export const smsTestSchema = z.object({
+  phone: z.string().trim().regex(/^09\d{8}$/, "Enter a Taiwan mobile number like 0912345678"),
+});
+
 export const categoryCreateSchema = z.object({
   name: z.string().trim().min(1, "Please enter a category name").max(30),
   sortOrder: z.number().int().optional(),

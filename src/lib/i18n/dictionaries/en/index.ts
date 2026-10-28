@@ -13,6 +13,7 @@ import { adminKitchen } from "./adminKitchen";
 import { platformAdmin } from "./platformAdmin";
 import { email } from "./email";
 import { billing } from "./billing";
+import { notifications } from "./notifications";
 
 export const en = {
   common,
@@ -30,6 +31,7 @@ export const en = {
   platformAdmin,
   email,
   billing,
+  notifications,
 };
 
 export type Dictionary = typeof en;
